@@ -37,3 +37,18 @@ PYTHONPATH=src python -m neuroflynav.experiments.run_spike --episodes 20 --seed 
 
 See [docs/spike.md](docs/spike.md) for the policy conventions, what the graph shuffle preserves,
 and the planned next steps.
+
+## Development spike (M0+)
+
+M0+ makes the comparison able to *discriminate* topologies, which the plain M0 task could not. It adds
+a navigation task with a *hidden goal cue* (so memory is required), turns the graph into a frozen
+recurrent substrate with a trained linear readout, and compares FlyConnectome, a degree-preserving
+ShuffledFly, a matched-edge RandomRecurrent, and a memoryless Reactive baseline, including a robustness
+probe. It is still a non-scientific spike: the result is illustrative only and nothing is frozen. It
+adds one dependency, `numpy`. Run it with:
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_m0plus --seed 0
+```
+
+See [docs/spike_m0plus.md](docs/spike_m0plus.md) for the design, how to read the output, and next steps.
