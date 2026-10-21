@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 from datetime import UTC, datetime
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from platform import machine, python_implementation, python_version, release, system
 
@@ -63,9 +63,10 @@ def test_manifest_has_documented_schema_and_captures_fields(
         "release": release(),
         "machine": machine(),
     }
-    assert manifest["tools"] == {
-        name: version(name) for name in provenance.TOOL_DISTRIBUTIONS
-    }
+    tools = manifest["tools"]
+    assert isinstance(tools, dict)
+    assert set(tools) == set(provenance.TOOL_DISTRIBUTIONS)
+    assert all(isinstance(value, str) and value for value in tools.values())
     assert json.loads(json.dumps(manifest)) == manifest
 
 
@@ -139,11 +140,31 @@ def test_missing_tool_metadata_fails_with_environment_guidance(
         raise PackageNotFoundError
 
     monkeypatch.setattr(provenance, "version", missing_version)
+    monkeypatch.setattr(provenance, "_executable_version", lambda tool: None)
 
     with pytest.raises(
         provenance.ProvenanceError, match="neuroflynav Conda environment"
     ):
         provenance.build_manifest("python -m pytest", tmp_path)
+
+
+def test_tool_without_metadata_falls_back_to_executable_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fake_git(monkeypatch)
+    _repository_with_environment_file(tmp_path)
+
+    def version_without_ruff(distribution: str) -> str:
+        if distribution == "ruff":
+            raise PackageNotFoundError
+        return "1.0"
+
+    monkeypatch.setattr(provenance, "version", version_without_ruff)
+    monkeypatch.setattr(provenance, "_executable_version", lambda tool: "0.17.1")
+
+    manifest = provenance.build_manifest("python -m pytest", tmp_path)
+
+    assert manifest["tools"] == {"pytest": "1.0", "ruff": "0.17.1", "mypy": "1.0"}
 
 
 def test_empty_command_is_rejected(

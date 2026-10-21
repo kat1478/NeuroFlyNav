@@ -68,16 +68,39 @@ def _environment_sha256(repository_root: Path) -> str:
     return hashlib.sha256(content).hexdigest()
 
 
+def _executable_version(tool: str) -> str | None:
+    """Ask the tool next to the running interpreter for its version, if it exists.
+
+    Some Conda builds ship only a binary without Python metadata (e.g. ruff >= 0.17
+    on conda-forge). Looking beside ``sys.executable`` keeps the check bound to the
+    active environment instead of whatever is first on PATH.
+    """
+    executable = Path(sys.executable).parent / tool
+    if not executable.is_file():
+        return None
+    try:
+        result = subprocess.run(
+            [str(executable), "--version"], check=True, capture_output=True, text=True
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    words = result.stdout.split()
+    return words[-1] if words else None
+
+
 def _tool_versions() -> dict[str, str]:
     versions: dict[str, str] = {}
     for distribution in TOOL_DISTRIBUTIONS:
         try:
             versions[distribution] = version(distribution)
         except PackageNotFoundError as error:
-            raise ProvenanceError(
-                f"Installed metadata for {distribution!r} is unavailable; "
-                "run this command in the neuroflynav Conda environment"
-            ) from error
+            fallback = _executable_version(distribution)
+            if fallback is None:
+                raise ProvenanceError(
+                    f"Installed metadata for {distribution!r} is unavailable; "
+                    "run this command in the neuroflynav Conda environment"
+                ) from error
+            versions[distribution] = fallback
     return versions
 
 
