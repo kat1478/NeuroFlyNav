@@ -22,6 +22,7 @@ import json
 import sys
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
+from pathlib import Path
 
 from neuroflynav.agent.reservoir import (
     LinearPolicy,
@@ -34,6 +35,11 @@ from neuroflynav.agent.reservoir import (
     build_random_core,
 )
 from neuroflynav.env.nav_memory import MemoryGridNavConfig, MemoryGridNavEnv
+from neuroflynav.graph.hemibrain import (
+    DEFAULT_DATA_DIR,
+    WEIGHT_TRANSFORMS,
+    HemibrainCXGraphLoader,
+)
 from neuroflynav.graph.interface import Graph, NodeRole
 from neuroflynav.graph.shuffle import shuffle_graph
 from neuroflynav.graph.synthetic import SyntheticCXGraphLoader
@@ -96,7 +102,7 @@ def _mean_edge_weight(graph: Graph) -> float:
 
 
 def _named_representations(
-    graph: Graph, config: ReservoirConfig, base_seed: int
+    graph: Graph, config: ReservoirConfig, base_seed: int, graph_label: str
 ) -> list[tuple[str, str, Representation]]:
     sensory = len(graph.nodes_with_role(NodeRole.SENSORY))
     motor = len(graph.nodes_with_role(NodeRole.MOTOR))
@@ -115,7 +121,7 @@ def _named_representations(
     return [
         (
             "FlyConnectome",
-            "synthetic",
+            graph_label,
             ReservoirRepresentation(fly_core, config.grid_size),
         ),
         (
@@ -140,12 +146,19 @@ def run_m0plus(
     train_episodes: int = 80,
     eval_episodes: int = 40,
     base_seed: int = 0,
+    graph: Graph | None = None,
+    graph_label: str = "synthetic",
 ) -> M0PlusSummary:
-    """Train and evaluate all M0+ policies; return a reproducible summary."""
+    """Train and evaluate all M0+ policies; return a reproducible summary.
+
+    ``graph`` defaults to the synthetic CX-like graph; pass the hemibrain CX subgraph
+    (M1 spike) to run the same comparison on real wiring.
+    """
     if train_episodes < 1 or eval_episodes < 1:
         raise ValueError("train_episodes and eval_episodes must be at least 1")
 
-    graph = SyntheticCXGraphLoader(seed=base_seed).load()
+    if graph is None:
+        graph = SyntheticCXGraphLoader(seed=base_seed).load()
     config = ReservoirConfig(grid_size=grid_size)
     train_env = MemoryGridNavEnv(
         MemoryGridNavConfig(size=grid_size, max_steps=max_steps, cue_steps=cue_steps)
@@ -161,7 +174,7 @@ def run_m0plus(
 
     metrics: list[PolicyMetrics] = []
     for name, graph_name, representation in _named_representations(
-        graph, config, base_seed
+        graph, config, base_seed, graph_label
     ):
         features, targets = collect_dataset(train_env, representation, train_seeds)
         readout = fit_ridge(features, targets, ridge_lambda=1e-2)
@@ -202,6 +215,16 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--train", type=int, default=80)
     parser.add_argument("--eval", type=int, default=40)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--graph", choices=("synthetic", "hemibrain"), default="synthetic"
+    )
+    parser.add_argument(
+        "--weights",
+        choices=sorted(WEIGHT_TRANSFORMS),
+        default="raw",
+        help="hemibrain weight transform (exploratory)",
+    )
+    parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     return parser
 
 
@@ -209,6 +232,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the M0+ comparison and print a JSON summary to stdout."""
     arguments = _argument_parser().parse_args(argv)
     try:
+        graph = None
+        graph_label = "synthetic"
+        if arguments.graph == "hemibrain":
+            graph = HemibrainCXGraphLoader(arguments.data_dir, arguments.weights).load()
+            graph_label = f"hemibrain-cx(weights={arguments.weights})"
         summary = run_m0plus(
             grid_size=arguments.grid_size,
             cue_steps=arguments.cue_steps,
@@ -217,8 +245,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             train_episodes=arguments.train,
             eval_episodes=arguments.eval,
             base_seed=arguments.seed,
+            graph=graph,
+            graph_label=graph_label,
         )
-    except ValueError as error:
+    except (ValueError, OSError) as error:
         print(f"run_m0plus: error: {error}", file=sys.stderr)
         return 1
     print(json.dumps(asdict(summary), sort_keys=True))

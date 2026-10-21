@@ -52,3 +52,15 @@ PYTHONPATH=src python -m neuroflynav.experiments.run_m0plus --seed 0
 ```
 
 See [docs/spike_m0plus.md](docs/spike_m0plus.md) for the design, how to read the output, and next steps.
+
+## Development spike (M1): real central-complex wiring
+
+The M0+ comparison also runs on the real CX subgraph from the public hemibrain v1.2 connectome
+(2,966 neurons, 467,579 edges), with `raw`, `log1p` or `binary` edge weights. Download the public
+export first (see the doc), then:
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_m0plus --graph hemibrain --weights log1p --seed 0
+```
+
+See [docs/spike_m1.md](docs/spike_m1.md) for data, selection, the first single-seed look and next steps.
