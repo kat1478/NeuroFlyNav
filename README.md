@@ -12,7 +12,7 @@ of a navigation agent. It then compares that agent against fair controls: the sa
 shuffled, a random network of the same size, and a network with no memory at all. Biological
 topology is a hypothesis to test, not an assumption; a negative result is a valid outcome.
 
-> **Status: v0.1.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> **Status: v0.2.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections). Dynamics, inputs and readout are placeholders, and no
 > experiment has been frozen yet. Numbers below are a first look, not a scientific claim.
 
@@ -31,8 +31,8 @@ hemibrain v1.2 connectome ──► CX subgraph ──► frozen recurrent "rese
 3. **Task** — a grid world where the goal direction is shown only for the first few steps, so
    the agent must *remember* it (`neuroflynav.env.nav_memory`).
 4. **Training** — only the readout is learned, by imitating an expert (`neuroflynav.training`).
-5. **Controls** — `ShuffledFly` (degree-preserving rewiring), `RandomRecurrent` (matched edge
-   count), `Reactive` (no memory).
+5. **Controls** — `ShuffledFly` (degree-preserving rewiring), `TypeShuffledFly` (rewiring within
+   cell types), `RandomRecurrent` (matched edge count), `Reactive` (no memory).
 
 ## First look (20 seeds)
 
@@ -46,10 +46,12 @@ Success rate on the hidden-cue task, mean and 95% CI, `log1p` edge weights:
 | Reactive (no memory) | 0.31 [0.30, 0.32] |
 
 Paired difference FlyConnectome − ShuffledFly: **+0.08 [+0.02, +0.13]** — a small edge for the
-real wiring that also appears with wiring-only (`binary`) weights. It is exploratory: three
-weight transforms were compared without correction and the dynamics are placeholders. A
-robustness gap seen in a single seed disappeared over 20 seeds. Full tables:
-[docs/spike_m1.md](docs/spike_m1.md).
+real wiring. A pre-registered follow-up on fresh seeds 20–39 **replicated** it (+0.06
+[+0.02, +0.11]) and showed where it comes from: a control that keeps the cell-type-to-cell-type
+wiring but shuffles exact partners performs as well as the real graph (−0.01 [−0.05, +0.02]).
+On this task the benefit is in *which cell types connect*, not in the exact neuron map. With
+wiring-only (`binary`) weights there is no edge. All of this is exploratory: toy task,
+placeholder dynamics. Full tables: [docs/spike_m1.md](docs/spike_m1.md).
 
 ## Quick start
 
@@ -81,8 +83,8 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 
 ## Roadmap
 
-- **M2 — honest science:** cell-type-preserving shuffle (does the edge come from exact partners
-  or from cell-type structure?), a pre-registered comparison, frozen protocol and holdout.
+- **M2 — honest science:** a harder task where fine wiring could matter, signed synapses, a
+  frozen protocol and a one-shot holdout.
 - **M3 — cloud:** containerised multi-seed sweeps on AWS Batch (CPU) with S3 artifacts.
 - **M4 — write-up:** results notebook, figures, short report.
 
