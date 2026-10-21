@@ -40,7 +40,12 @@ Spike conventions (not modeling decisions):
 PYTHONPATH=src python -m neuroflynav.experiments.run_m0plus --graph hemibrain --weights log1p --seed 0
 ```
 
-One run takes about 5 minutes on a laptop CPU: the 2,966 × 2,966 reservoir matrix is dense.
+One seed takes about 30 s on a laptop CPU (sparse reservoir, ARPACK spectral radius,
+vectorized controls). Many seeds with confidence intervals:
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_m1_seeds --seeds 20
+```
 
 ## First look (seed 0, 80 training / 40 evaluation episodes)
 
@@ -61,9 +66,30 @@ How to read it:
 - RandomRecurrent is identical across transforms because it uses a single mean weight and
   spectral rescaling removes the scale.
 
+## 20 seeds (seeds 0–19, same settings)
+
+Mean success rate with a 95% normal-approximation CI; last row is the paired per-seed
+difference FlyConnectome − ShuffledFly (same episodes for both).
+
+| Policy | raw | log1p | binary |
+| --- | --- | --- | --- |
+| FlyConnectome | 0.67 [0.63, 0.72] | 0.64 [0.59, 0.68] | 0.61 [0.57, 0.66] |
+| ShuffledFly | 0.61 [0.57, 0.64] | 0.56 [0.53, 0.60] | 0.56 [0.53, 0.60] |
+| RandomRecurrent | 0.57 [0.53, 0.61] | 0.57 [0.53, 0.61] | 0.57 [0.53, 0.61] |
+| Reactive | 0.31 [0.30, 0.32] | 0.31 [0.30, 0.32] | 0.31 [0.30, 0.32] |
+| **Fly − Shuffled** | +0.066 [+0.000, +0.132] | +0.076 [+0.022, +0.131] | +0.051 [+0.000, +0.102] |
+| Fly − Shuffled, robustness probe | +0.020 [−0.032, +0.072] | +0.015 [−0.037, +0.067] | +0.026 [−0.029, +0.082] |
+
+Reading:
+- The single-seed `log1p` robustness lead was noise: across 20 seeds the robustness gap is ~0.
+- There is a small, consistent in-distribution edge of real wiring over the degree-preserving
+  shuffle (+5 to +8 points), clearest for `log1p`. It survives `binary` weights, so it comes at
+  least partly from *who connects to whom*, not only from synapse counts.
+- Still exploratory: three transforms were compared (no multiple-comparison correction), the CI
+  is a normal approximation over 20 seeds, and dynamics/readout are placeholders.
+
 ## Next
 
-- Run many seeds with confidence intervals before reading anything into the gaps.
-- Speed: sparse recurrent matrix (~5% density), or a smaller CX core (e.g. intrinsic neurons only).
+- Freeze one comparison (transform, seeds, metric) before testing it again, to avoid picking the best of three.
 - Controls for H2: a shuffle that also preserves cell-type block structure.
 - Readout restricted to `PFL` outputs, and real sensory encoding for the ring neurons, are TASK-014 questions.

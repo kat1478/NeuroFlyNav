@@ -14,3 +14,7 @@ quote-style = "double"
 python_version = "3.12"
 mypy_path = "src"
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["scipy", "scipy.*"]
+ignore_missing_imports = true

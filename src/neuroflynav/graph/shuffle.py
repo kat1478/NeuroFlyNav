@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from random import Random
 
+import numpy as np
+
 from neuroflynav.graph.interface import Edge, Graph
+
+# Above this edge count use the fast swap loop (same swap rule, numpy-drawn indices).
+# Smaller graphs keep the reference loop so M0/M0+ outputs stay byte-identical.
+FAST_EDGE_LIMIT = 10_000
 
 
 def shuffle_graph(graph: Graph, seed: int, swaps_per_edge: int = 10) -> Graph:
@@ -23,6 +29,8 @@ def shuffle_graph(graph: Graph, seed: int, swaps_per_edge: int = 10) -> Graph:
     if len(edges) < 2 or swaps_per_edge == 0:
         return graph
 
+    if len(edges) > FAST_EDGE_LIMIT:
+        return _fast_shuffle(graph, seed, swaps_per_edge)
     rng = Random(seed)
     attempts = swaps_per_edge * len(edges)
     for _ in range(attempts):
@@ -48,3 +56,27 @@ def shuffle_graph(graph: Graph, seed: int, swaps_per_edge: int = 10) -> Graph:
     if tuple(edges) == graph.edges:
         return graph
     return Graph(num_nodes=graph.num_nodes, edges=tuple(edges), roles=graph.roles)
+
+
+def _fast_shuffle(graph: Graph, seed: int, swaps_per_edge: int) -> Graph:
+    """Same double-edge-swap rule on plain int lists; draws all indices up front."""
+    sources = [edge.source for edge in graph.edges]
+    targets = [edge.target for edge in graph.edges]
+    count = len(sources)
+    rng = np.random.default_rng(seed)
+    firsts = rng.integers(count, size=swaps_per_edge * count)
+    seconds = rng.integers(count - 1, size=swaps_per_edge * count)
+    seconds += seconds >= firsts  # two distinct edges, like Random.sample
+    for first, second in zip(firsts.tolist(), seconds.tolist(), strict=True):
+        source_a, source_b = sources[first], sources[second]
+        if source_a == source_b:
+            continue
+        target_a, target_b = targets[first], targets[second]
+        if source_a == target_b or source_b == target_a:
+            continue
+        targets[first], targets[second] = target_b, target_a
+    edges = tuple(
+        Edge(source, target, edge.weight)
+        for source, target, edge in zip(sources, targets, graph.edges, strict=True)
+    )
+    return Graph(num_nodes=graph.num_nodes, edges=edges, roles=graph.roles)
