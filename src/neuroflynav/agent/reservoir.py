@@ -135,7 +135,11 @@ def build_core_from_graph(
 
 
 def _place_random_edges(
-    raw: FloatArray, num_edges: int, weight: float, rng: np.random.Generator
+    raw: FloatArray,
+    num_edges: int,
+    weight: float,
+    rng: np.random.Generator,
+    inhibitory_fraction: float = 0.0,
 ) -> None:
     """Vectorized version of the edge-placement loop, for large graphs."""
     num_nodes = raw.shape[0]
@@ -146,7 +150,10 @@ def _place_random_edges(
         keep = draw[0] != draw[1]
         sources.extend(draw[0][keep].tolist())
         targets.extend(draw[1][keep].tolist())
-    np.add.at(raw, (targets[:num_edges], sources[:num_edges]), weight)
+    values = np.full(num_edges, weight)
+    if inhibitory_fraction > 0:
+        values[rng.random(num_edges) < inhibitory_fraction] *= -1.0
+    np.add.at(raw, (targets[:num_edges], sources[:num_edges]), values)
 
 
 def build_random_core(
@@ -158,6 +165,7 @@ def build_random_core(
     config: ReservoirConfig,
     seed: int,
     input_dim: int = FEATURE_DIM,
+    inhibitory_fraction: float = 0.0,
 ) -> ReservoirCore:
     """Build a reservoir from a random directed graph with a matched edge count."""
     if num_sensory + num_motor > num_nodes:
@@ -165,7 +173,7 @@ def build_random_core(
     rng = np.random.default_rng(seed)
     raw = np.zeros((num_nodes, num_nodes), dtype=np.float64)
     if num_nodes > DENSE_LIMIT:
-        _place_random_edges(raw, num_edges, weight, rng)
+        _place_random_edges(raw, num_edges, weight, rng, inhibitory_fraction)
     else:
         placed = 0
         while placed < num_edges:

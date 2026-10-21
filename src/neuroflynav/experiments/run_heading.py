@@ -22,7 +22,7 @@ import argparse
 import json
 import sys
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -39,8 +39,11 @@ from neuroflynav.experiments.run_m1_seeds import Estimate, estimate
 from neuroflynav.graph.hemibrain import (
     DEFAULT_DATA_DIR,
     WEIGHT_TRANSFORMS,
+    CXSubgraph,
+    inhibitory_nodes,
     load_cx_subgraph,
     node_groups,
+    random_inhibitory_nodes,
     to_graph,
 )
 from neuroflynav.graph.interface import Graph, NodeRole
@@ -78,11 +81,18 @@ def _reservoir_features(core: ReservoirCore) -> FeatureFn:
 
 
 def _policies(
-    graph: Graph, groups: Sequence[str] | None, config: ReservoirConfig, seed: int
+    graph: Graph,
+    groups: Sequence[str] | None,
+    config: ReservoirConfig,
+    seed: int,
+    extra_graphs: Mapping[str, Graph] | None = None,
 ) -> list[tuple[str, FeatureFn]]:
     sensory = len(graph.nodes_with_role(NodeRole.SENSORY))
     motor = len(graph.nodes_with_role(NodeRole.MOTOR))
-    mean_weight = sum(edge.weight for edge in graph.edges) / max(len(graph.edges), 1)
+    mean_weight = sum(abs(edge.weight) for edge in graph.edges) / max(
+        len(graph.edges), 1
+    )
+    negative = sum(edge.weight < 0 for edge in graph.edges) / max(len(graph.edges), 1)
     policies: list[tuple[str, FeatureFn]] = [
         (
             "FlyConnectome",
@@ -116,9 +126,19 @@ def _policies(
         config=config,
         seed=seed + 2,
         input_dim=INPUT_DIM,
+        inhibitory_fraction=negative,
     )
     policies.append(("RandomRecurrent", _reservoir_features(random_core)))
     policies.append(("Reactive", lambda inputs: inputs))
+    for name, extra in (extra_graphs or {}).items():
+        policies.append(
+            (
+                name,
+                _reservoir_features(
+                    build_core_from_graph(extra, config, seed, INPUT_DIM)
+                ),
+            )
+        )
     return policies
 
 
@@ -161,6 +181,7 @@ def run_heading(
     test_sequences: int = 50,
     ridge_lambda: float = 1.0,
     reservoir: ReservoirConfig | None = None,
+    extra_graphs: Mapping[str, Graph] | None = None,
 ) -> dict[str, HeadingScore]:
     """Score every policy for one seed (task sequences and control draws depend on it)."""
     settings = task or HeadingTaskConfig()
@@ -169,8 +190,21 @@ def run_heading(
     return {
         name: score_policy(features, settings, train_seeds, test_seeds, ridge_lambda)
         for name, features in _policies(
-            graph, groups, reservoir or ReservoirConfig(), seed
+            graph, groups, reservoir or ReservoirConfig(), seed, extra_graphs
         )
+    }
+
+
+def _sign_controls(subgraph: CXSubgraph, weights: str, seed: int) -> dict[str, Graph]:
+    """RandomSignFly (same number of inhibitory neurons, random ones) and UnsignedFly."""
+    count = len(inhibitory_nodes(subgraph))
+    return {
+        "RandomSignFly": to_graph(
+            subgraph,
+            weights,
+            inhibitory=random_inhibitory_nodes(subgraph, count, seed + 7),
+        ),
+        "UnsignedFly": to_graph(subgraph, weights),
     }
 
 
@@ -206,6 +240,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--steps", type=int, default=40)
     parser.add_argument("--micro-steps", type=int, default=1)
     parser.add_argument("--radius", type=float, default=1.1)
+    parser.add_argument(
+        "--signs",
+        choices=("none", "types"),
+        default="none",
+        help="'types': Δ7 and ER outputs inhibitory; adds RandomSignFly and UnsignedFly",
+    )
     parser.add_argument("--output", type=Path, default=Path("results/heading/run.json"))
     arguments = parser.parse_args(argv)
     if arguments.seeds < 1:
@@ -215,7 +255,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     groups: tuple[str, ...] | None = None
     if arguments.graph == "hemibrain":
         subgraph = load_cx_subgraph(arguments.data_dir)
-        graph = to_graph(subgraph, arguments.weights)
+        inhibitory = (
+            inhibitory_nodes(subgraph) if arguments.signs == "types" else frozenset()
+        )
+        graph = to_graph(subgraph, arguments.weights, inhibitory=inhibitory)
         groups = node_groups(subgraph)
     else:
         graph = SyntheticCXGraphLoader(seed=0).load()
@@ -242,6 +285,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             ridge_lambda=arguments.ridge,
             task=task,
             reservoir=reservoir,
+            extra_graphs=_sign_controls(subgraph, arguments.weights, seed)
+            if arguments.graph == "hemibrain" and arguments.signs == "types"
+            else None,
         )
         per_seed.append(scores)
         test_start = seed * 10_000 + 5_000
@@ -265,6 +311,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "ridge": arguments.ridge,
         "task": asdict(task),
         "reservoir": asdict(reservoir),
+        "signs": arguments.signs,
         "accuracy": {p: asdict(e) for p, e in accuracy.items()},
         "fly_minus": {p: asdict(e) for p, e in accuracy_diff.items()},
         "late_accuracy": {p: asdict(e) for p, e in late.items()},

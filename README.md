@@ -56,6 +56,8 @@ placeholder dynamics. Full tables: [docs/spike_m1.md](docs/spike_m1.md).
 A second, pre-registered task — keeping track of heading from self-motion between landmarks —
 gives the same picture: real wiring +0.03 over the degree-preserving shuffle, cell-type
 structure enough, and no reservoir yet integrates (all stay below a memory-only reference).
+Adding biologically placed inhibition (Δ7 and ring neurons) to the generic reservoir made it
+*worse* — a sign that the dynamics, not the wiring or the signs, are now the bottleneck.
 See [docs/spike_heading.md](docs/spike_heading.md).
 
 ## Quick start

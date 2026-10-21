@@ -43,3 +43,27 @@ Reading:
   last landmark, not as an integrator. The task does not yet test integration.
 - The likely missing piece is **inhibition**: the fly compass is a ring attractor built with
   inhibitory Δ7 neurons, while all weights here are positive. Signed weights are the next test.
+
+## Signed weights (pre-registered, seeds 20–39)
+
+Exploratory sign rule: outgoing edges of Δ7 (glutamatergic) and ring `ER*` (GABAergic) neurons
+are inhibitory, all others excitatory (9.5% of edges negative). Controls: **RandomSignFly** (same
+wiring, the same number of inhibitory neurons chosen at random) and **UnsignedFly** (all positive).
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_heading --graph hemibrain --signs types \
+    --first-seed 20 --seeds 20
+```
+
+| Paired difference | Accuracy |
+| --- | --- |
+| SignedFly − UnsignedFly | −0.027 [−0.034, −0.021] |
+| SignedFly − RandomSignFly | −0.040 [−0.056, −0.025] |
+| SignedFly − ShuffledFly (signed) | −0.013 [−0.024, −0.001] |
+
+SignedFly 0.34, hold-last-landmark oracle 0.55.
+
+Reading: biologically placed inhibition makes this reservoir *worse*, worse even than randomly
+placed inhibition, and still nothing integrates. A ring attractor needs the right dynamics, not
+just the right signs; with a generic tanh echo-state reservoir, dynamics are the bottleneck.
+Next: model dynamics (trained recurrent gains on the CX mask, or a tuned rate model).
