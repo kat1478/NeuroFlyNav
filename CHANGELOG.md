@@ -3,7 +3,10 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
-## [Unreleased]
+## [0.2.0] — 2026-10-21
+
+First answer to H2: on the hidden-cue task, the edge of the real CX wiring over a
+degree-preserving shuffle replicates on fresh seeds and is explained by cell-type structure.
 
 ### Added
 - `TypeShuffledFly` control: degree-preserving rewiring restricted to the same cell type (H2).
@@ -39,4 +42,5 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
+[0.2.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.1.0
