@@ -22,3 +22,6 @@ Thumbs.db
 results/
 checkpoints/
 artifacts/
+
+# Local datasets (never committed)
+data/
