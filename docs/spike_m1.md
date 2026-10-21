@@ -82,14 +82,42 @@ difference FlyConnectome − ShuffledFly (same episodes for both).
 
 Reading:
 - The single-seed `log1p` robustness lead was noise: across 20 seeds the robustness gap is ~0.
-- There is a small, consistent in-distribution edge of real wiring over the degree-preserving
-  shuffle (+5 to +8 points), clearest for `log1p`. It survives `binary` weights, so it comes at
-  least partly from *who connects to whom*, not only from synapse counts.
+- There is a small in-distribution edge of real wiring over the degree-preserving shuffle
+  (+5 to +8 points), clearest for `log1p`. (The `binary` CI touches 0 and did not replicate on
+  fresh seeds — see below.)
 - Still exploratory: three transforms were compared (no multiple-comparison correction), the CI
   is a normal approximation over 20 seeds, and dynamics/readout are placeholders.
 
+## Pre-registered follow-up: replication and cell-type shuffle (H2), seeds 20–39
+
+The analysis plan (fresh seeds 20–39, `log1p` primary, `binary` secondary, decision rules) was
+fixed before running. New control **TypeShuffledFly** swaps partners only within the same
+hemibrain cell type (370 types): every neuron keeps its in/out degree and the type-to-type edge
+counts are preserved; only exact partners inside a type are randomized.
+
+| Paired difference (mean, 95% CI) | `log1p` (primary) | `binary` |
+| --- | --- | --- |
+| FlyConnectome − ShuffledFly | **+0.061 [+0.017, +0.105]** | −0.001 [−0.039, +0.036] |
+| FlyConnectome − TypeShuffledFly | **−0.014 [−0.048, +0.020]** | −0.023 [−0.064, +0.019] |
+| FlyConnectome − RandomRecurrent | +0.059 [+0.023, +0.095] | +0.005 [−0.034, +0.044] |
+| FlyConnectome − Reactive | +0.305 [+0.273, +0.337] | +0.251 [+0.215, +0.287] |
+
+Reading:
+- The edge over the degree-preserving shuffle **replicates** on fresh seeds with `log1p` weights.
+- It is **explained by cell-type structure**: rewiring exact partners within types costs nothing
+  (TypeShuffled 0.71 vs Fly 0.70). On this task, which *types* connect to which — with
+  synapse-count magnitudes — carries the benefit, not the exact neuron-to-neuron map.
+- With wiring-only (`binary`) weights there is no edge on fresh seeds; the earlier `binary` result
+  did not replicate.
+- Exploratory: toy task, placeholder dynamics and readout, all-excitatory weights.
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_m1_seeds --first-seed 20 --seeds 20 \
+    --weights log1p binary --type-shuffle
+```
+
 ## Next
 
-- Freeze one comparison (transform, seeds, metric) before testing it again, to avoid picking the best of three.
-- Controls for H2: a shuffle that also preserves cell-type block structure.
+- A harder task where fine wiring could matter (e.g. path integration with a ring attractor), since type-level structure suffices here.
+- Coarser groups (cell-type families) to find how much structure is needed.
 - Readout restricted to `PFL` outputs, and real sensory encoding for the ring neurons, are TASK-014 questions.

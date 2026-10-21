@@ -10,7 +10,7 @@ from neuroflynav.agent.fly_connectome import FlyConnectome
 from neuroflynav.agent.shuffled_fly import ShuffledFly
 from neuroflynav.env.nav import Action, GridObservation
 from neuroflynav.graph.interface import Edge, Graph, NodeRole
-from neuroflynav.graph.shuffle import shuffle_graph
+from neuroflynav.graph.shuffle import shuffle_graph, shuffle_within_target_groups
 from neuroflynav.graph.synthetic import generate_synthetic_cx_graph
 
 
@@ -84,3 +84,23 @@ def test_shuffled_fly_implements_policy_interface_and_uses_seeded_graph() -> Non
     assert first.graph == second.graph
     assert first.act(observation) == second.act(observation)
     assert len(first.edges) == len(graph.edges)
+
+
+def test_type_shuffle_preserves_degrees_and_group_blocks() -> None:
+
+    graph = generate_synthetic_cx_graph(seed=0)
+    groups = tuple("abcd"[node % 4] for node in range(graph.num_nodes))
+    shuffled = shuffle_within_target_groups(graph, groups, seed=3)
+
+    def profile(
+        g: Graph,
+    ) -> tuple[Counter[int], Counter[int], Counter[tuple[str, str]]]:
+        return (
+            Counter(edge.source for edge in g.edges),
+            Counter(edge.target for edge in g.edges),
+            Counter((groups[edge.source], groups[edge.target]) for edge in g.edges),
+        )
+
+    assert shuffled.edges != graph.edges
+    assert profile(shuffled) == profile(graph)
+    assert shuffled == shuffle_within_target_groups(graph, groups, seed=3)

@@ -4,7 +4,7 @@ For each weight transform the CX graph is built once; every seed then re-draws t
 training/evaluation episodes, the ShuffledFly rewiring, the RandomRecurrent graph and
 the input weights. The output reports, per policy, the mean success rate with a 95%
 normal-approximation confidence interval, plus the paired per-seed difference
-FlyConnectome − ShuffledFly (same episodes, so the pairing removes task noise).
+FlyConnectome − each control (same episodes, so the pairing removes task noise).
 
 Exploratory only: placeholder dynamics, readout and sensory/motor conventions.
 
@@ -29,6 +29,7 @@ from neuroflynav.graph.hemibrain import (
     DEFAULT_DATA_DIR,
     WEIGHT_TRANSFORMS,
     load_cx_subgraph,
+    node_groups,
     to_graph,
 )
 
@@ -52,8 +53,8 @@ class TransformResult:
     seeds: tuple[int, ...]
     success: dict[str, Estimate]
     robust_success: dict[str, Estimate]
-    fly_minus_shuffled: Estimate
-    fly_minus_shuffled_robust: Estimate
+    fly_minus: dict[str, Estimate]
+    fly_minus_robust: dict[str, Estimate]
 
 
 def estimate(values: Sequence[float]) -> Estimate:
@@ -81,17 +82,20 @@ def aggregate(
     plain = [_rates(summary, robust=False) for summary in summaries]
     robust = [_rates(summary, robust=True) for summary in summaries]
     policies = list(plain[0])
+    controls = [p for p in policies if p != "FlyConnectome"]
     return TransformResult(
         weights=weights,
         seeds=tuple(seeds),
         success={p: estimate([rates[p] for rates in plain]) for p in policies},
         robust_success={p: estimate([rates[p] for rates in robust]) for p in policies},
-        fly_minus_shuffled=estimate(
-            [rates["FlyConnectome"] - rates["ShuffledFly"] for rates in plain]
-        ),
-        fly_minus_shuffled_robust=estimate(
-            [rates["FlyConnectome"] - rates["ShuffledFly"] for rates in robust]
-        ),
+        fly_minus={
+            p: estimate([rates["FlyConnectome"] - rates[p] for rates in plain])
+            for p in controls
+        },
+        fly_minus_robust={
+            p: estimate([rates["FlyConnectome"] - rates[p] for rates in robust])
+            for p in controls
+        },
     )
 
 
@@ -102,6 +106,12 @@ def _format(value: Estimate) -> str:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Multi-seed M0+ on hemibrain CX.")
     parser.add_argument("--seeds", type=int, default=10)
+    parser.add_argument("--first-seed", type=int, default=0)
+    parser.add_argument(
+        "--type-shuffle",
+        action="store_true",
+        help="add the cell-type-preserving TypeShuffledFly control (H2)",
+    )
     parser.add_argument(
         "--weights",
         nargs="+",
@@ -116,7 +126,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     subgraph = load_cx_subgraph(arguments.data_dir)
-    seeds = tuple(range(arguments.seeds))
+    seeds = tuple(range(arguments.first_seed, arguments.first_seed + arguments.seeds))
+    groups = node_groups(subgraph) if arguments.type_shuffle else None
     results: list[TransformResult] = []
     for weights in arguments.weights:
         graph = to_graph(subgraph, weights)
@@ -128,6 +139,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     base_seed=seed,
                     graph=graph,
                     graph_label=f"hemibrain-cx(weights={weights})",
+                    node_groups=groups,
                 )
             )
             print(
@@ -136,11 +148,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         result = aggregate(weights, seeds, summaries)
         results.append(result)
-        print(
-            f"{weights}: Fly−Shuffled success {_format(result.fly_minus_shuffled)}, "
-            f"robust {_format(result.fly_minus_shuffled_robust)}",
-            file=sys.stderr,
-        )
+        for control, difference in result.fly_minus.items():
+            print(
+                f"{weights}: Fly − {control} success {_format(difference)}",
+                file=sys.stderr,
+            )
 
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(

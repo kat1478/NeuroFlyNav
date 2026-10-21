@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
+## [Unreleased]
+
+### Added
+- `TypeShuffledFly` control: degree-preserving rewiring restricted to the same cell type (H2).
+- `run_m1_seeds --first-seed --type-shuffle`; results report FlyConnectome minus every control.
+
+### Changed
+- README and `docs/spike_m1.md`: pre-registered replication on seeds 20–39. The edge over
+  ShuffledFly replicates with `log1p` weights and is explained by cell-type structure; the
+  earlier claim that it also appears with `binary` weights did not replicate and is corrected.
+
 ## [0.1.0] — 2026-10-21
 
 First public release: the pipeline runs end to end on the real *Drosophila* central-complex wiring.

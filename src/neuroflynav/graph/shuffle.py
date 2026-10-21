@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from random import Random
 
 import numpy as np
@@ -68,6 +69,56 @@ def _fast_shuffle(graph: Graph, seed: int, swaps_per_edge: int) -> Graph:
     seconds = rng.integers(count - 1, size=swaps_per_edge * count)
     seconds += seconds >= firsts  # two distinct edges, like Random.sample
     for first, second in zip(firsts.tolist(), seconds.tolist(), strict=True):
+        source_a, source_b = sources[first], sources[second]
+        if source_a == source_b:
+            continue
+        target_a, target_b = targets[first], targets[second]
+        if source_a == target_b or source_b == target_a:
+            continue
+        targets[first], targets[second] = target_b, target_a
+    edges = tuple(
+        Edge(source, target, edge.weight)
+        for source, target, edge in zip(sources, targets, graph.edges, strict=True)
+    )
+    return Graph(num_nodes=graph.num_nodes, edges=edges, roles=graph.roles)
+
+
+def shuffle_within_target_groups(
+    graph: Graph, groups: Sequence[str], seed: int, swaps_per_edge: int = 10
+) -> Graph:
+    """Double-edge swaps restricted to edges whose targets share a group label.
+
+    Swapping the targets of ``u→v`` and ``x→y`` only when ``group(v) == group(y)``
+    preserves every node's in/out degree *and* the number of edges between every
+    pair of groups (the group-to-group block structure). Only the exact partners
+    inside a group are randomized. Used as the H2 control with cell types as groups.
+    """
+    if len(groups) != graph.num_nodes:
+        raise ValueError("groups must have one label per node")
+    if swaps_per_edge < 0:
+        raise ValueError("swaps_per_edge must not be negative")
+    sources = [edge.source for edge in graph.edges]
+    targets = [edge.target for edge in graph.edges]
+    members: dict[str, list[int]] = {}
+    for index, target in enumerate(targets):
+        members.setdefault(groups[target], []).append(index)
+    pools = [pool for pool in members.values() if len(pool) >= 2]
+    if not pools or swaps_per_edge == 0:
+        return graph
+    sizes = np.array([len(pool) for pool in pools], dtype=np.float64)
+    attempts = swaps_per_edge * int(sizes.sum())
+    rng = np.random.default_rng(seed)
+    pool_ids = rng.choice(len(pools), size=attempts, p=sizes / sizes.sum())
+    first_draws = rng.random(attempts)
+    second_draws = rng.random(attempts)
+    for pool_id, first_draw, second_draw in zip(
+        pool_ids.tolist(), first_draws.tolist(), second_draws.tolist(), strict=True
+    ):
+        pool = pools[pool_id]
+        first_position = int(first_draw * len(pool))
+        second_position = int(second_draw * (len(pool) - 1))
+        second_position += second_position >= first_position
+        first, second = pool[first_position], pool[second_position]
         source_a, source_b = sources[first], sources[second]
         if source_a == source_b:
             continue

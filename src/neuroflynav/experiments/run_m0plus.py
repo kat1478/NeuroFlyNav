@@ -41,7 +41,7 @@ from neuroflynav.graph.hemibrain import (
     HemibrainCXGraphLoader,
 )
 from neuroflynav.graph.interface import Graph, NodeRole
-from neuroflynav.graph.shuffle import shuffle_graph
+from neuroflynav.graph.shuffle import shuffle_graph, shuffle_within_target_groups
 from neuroflynav.graph.synthetic import SyntheticCXGraphLoader
 from neuroflynav.training.imitation import collect_dataset, fit_ridge
 
@@ -102,7 +102,11 @@ def _mean_edge_weight(graph: Graph) -> float:
 
 
 def _named_representations(
-    graph: Graph, config: ReservoirConfig, base_seed: int, graph_label: str
+    graph: Graph,
+    config: ReservoirConfig,
+    base_seed: int,
+    graph_label: str,
+    node_groups: Sequence[str] | None = None,
 ) -> list[tuple[str, str, Representation]]:
     sensory = len(graph.nodes_with_role(NodeRole.SENSORY))
     motor = len(graph.nodes_with_role(NodeRole.MOTOR))
@@ -118,7 +122,7 @@ def _named_representations(
         config=config,
         seed=base_seed + 2,
     )
-    return [
+    named: list[tuple[str, str, Representation]] = [
         (
             "FlyConnectome",
             graph_label,
@@ -136,6 +140,18 @@ def _named_representations(
         ),
         ("Reactive", "none", ReactiveRepresentation(config.grid_size)),
     ]
+    if node_groups is not None:
+        type_graph = shuffle_within_target_groups(graph, node_groups, seed=base_seed)
+        type_core = build_core_from_graph(type_graph, config, seed=base_seed + 3)
+        named.insert(
+            2,
+            (
+                "TypeShuffledFly",
+                f"type-shuffled(seed={base_seed})",
+                ReservoirRepresentation(type_core, config.grid_size),
+            ),
+        )
+    return named
 
 
 def run_m0plus(
@@ -148,11 +164,13 @@ def run_m0plus(
     base_seed: int = 0,
     graph: Graph | None = None,
     graph_label: str = "synthetic",
+    node_groups: Sequence[str] | None = None,
 ) -> M0PlusSummary:
     """Train and evaluate all M0+ policies; return a reproducible summary.
 
     ``graph`` defaults to the synthetic CX-like graph; pass the hemibrain CX subgraph
-    (M1 spike) to run the same comparison on real wiring.
+    (M1 spike) to run the same comparison on real wiring. ``node_groups`` (one label
+    per node, e.g. cell types) adds the H2 control ``TypeShuffledFly``.
     """
     if train_episodes < 1 or eval_episodes < 1:
         raise ValueError("train_episodes and eval_episodes must be at least 1")
@@ -174,7 +192,7 @@ def run_m0plus(
 
     metrics: list[PolicyMetrics] = []
     for name, graph_name, representation in _named_representations(
-        graph, config, base_seed, graph_label
+        graph, config, base_seed, graph_label, node_groups
     ):
         features, targets = collect_dataset(train_env, representation, train_seeds)
         readout = fit_ridge(features, targets, ridge_lambda=1e-2)

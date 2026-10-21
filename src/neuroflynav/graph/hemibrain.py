@@ -80,6 +80,16 @@ def load_cx_subgraph(data_dir: Path = DEFAULT_DATA_DIR) -> CXSubgraph:
     )
 
 
+def node_groups(subgraph: CXSubgraph) -> tuple[str, ...]:
+    """Cell-type label per node; each untyped neuron is its own group."""
+    return tuple(
+        cell_type or f"untyped:{body_id}"
+        for body_id, cell_type in zip(
+            subgraph.body_ids, subgraph.cell_types, strict=True
+        )
+    )
+
+
 def _role(cell_type: str, sensory: tuple[str, ...], motor: tuple[str, ...]) -> NodeRole:
     if cell_type.startswith(sensory):
         return NodeRole.SENSORY
