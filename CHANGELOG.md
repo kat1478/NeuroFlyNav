@@ -10,6 +10,9 @@ All notable changes to this project are documented here. Versions follow
   self-motion in between, hold-last-landmark oracle as reference; pre-registered result in
   `docs/spike_heading.md`.
 - Reservoir builders accept `input_dim` (default unchanged).
+- Exploratory cell-type sign rule (Δ7 and ER outputs inhibitory), `run_heading --signs types`
+  with RandomSignFly and UnsignedFly controls; pre-registered negative result in
+  `docs/spike_heading.md`.
 
 ## [0.2.0] — 2026-10-21
 
