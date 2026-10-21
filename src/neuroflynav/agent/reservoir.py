@@ -59,12 +59,16 @@ class MemoryPolicy(Protocol):
 
 
 def _sensory_input_matrix(
-    num_nodes: int, sensory: tuple[int, ...], scale: float, seed: int
+    num_nodes: int,
+    sensory: tuple[int, ...],
+    scale: float,
+    seed: int,
+    input_dim: int = FEATURE_DIM,
 ) -> FloatArray:
     rng = np.random.default_rng(seed)
-    matrix = np.zeros((num_nodes, FEATURE_DIM), dtype=np.float64)
+    matrix = np.zeros((num_nodes, input_dim), dtype=np.float64)
     for node in sensory:
-        matrix[node, :] = rng.standard_normal(FEATURE_DIM) * scale
+        matrix[node, :] = rng.standard_normal(input_dim) * scale
     return matrix
 
 
@@ -116,7 +120,7 @@ class ReservoirCore:
 
 
 def build_core_from_graph(
-    graph: Graph, config: ReservoirConfig, seed: int
+    graph: Graph, config: ReservoirConfig, seed: int, input_dim: int = FEATURE_DIM
 ) -> ReservoirCore:
     """Build a reservoir whose frozen weights come from a graph's topology."""
     weights = scaled_for_radius(to_weight_matrix(graph), config.spectral_radius)
@@ -125,7 +129,7 @@ def build_core_from_graph(
     if not sensory or not motor:
         raise ValueError("graph must have at least one sensory and one motor node")
     input_matrix = _sensory_input_matrix(
-        graph.num_nodes, sensory, config.input_scale, seed
+        graph.num_nodes, sensory, config.input_scale, seed, input_dim
     )
     return ReservoirCore(weights, input_matrix, motor, config)
 
@@ -153,6 +157,7 @@ def build_random_core(
     weight: float,
     config: ReservoirConfig,
     seed: int,
+    input_dim: int = FEATURE_DIM,
 ) -> ReservoirCore:
     """Build a reservoir from a random directed graph with a matched edge count."""
     if num_sensory + num_motor > num_nodes:
@@ -174,7 +179,7 @@ def build_random_core(
     sensory = tuple(range(num_sensory))
     motor = tuple(range(num_nodes - num_motor, num_nodes))
     input_matrix = _sensory_input_matrix(
-        num_nodes, sensory, config.input_scale, seed + 1
+        num_nodes, sensory, config.input_scale, seed + 1, input_dim
     )
     return ReservoirCore(weights, input_matrix, motor, config)
 

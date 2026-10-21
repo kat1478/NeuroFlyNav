@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
+## [Unreleased]
+
+### Added
+- Heading integration task (`neuroflynav.tasks.heading`, `run_heading`): landmarks every 8 steps,
+  self-motion in between, hold-last-landmark oracle as reference; pre-registered result in
+  `docs/spike_heading.md`.
+- Reservoir builders accept `input_dim` (default unchanged).
+
 ## [0.2.0] — 2026-10-21
 
 First answer to H2: on the hidden-cue task, the edge of the real CX wiring over a
