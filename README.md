@@ -53,6 +53,11 @@ On this task the benefit is in *which cell types connect*, not in the exact neur
 wiring-only (`binary`) weights there is no edge. All of this is exploratory: toy task,
 placeholder dynamics. Full tables: [docs/spike_m1.md](docs/spike_m1.md).
 
+A second, pre-registered task — keeping track of heading from self-motion between landmarks —
+gives the same picture: real wiring +0.03 over the degree-preserving shuffle, cell-type
+structure enough, and no reservoir yet integrates (all stay below a memory-only reference).
+See [docs/spike_heading.md](docs/spike_heading.md).
+
 ## Quick start
 
 ```bash
@@ -78,6 +83,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike.md](docs/spike.md) | M0: first end-to-end loop on a synthetic graph |
 | [docs/spike_m0plus.md](docs/spike_m0plus.md) | M0+: hidden-cue task and reservoir, so topologies can be told apart |
 | [docs/spike_m1.md](docs/spike_m1.md) | M1: real hemibrain CX wiring, data download, multi-seed results |
+| [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/reproducibility.md](docs/reproducibility.md) | Provenance capture for runs |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 
