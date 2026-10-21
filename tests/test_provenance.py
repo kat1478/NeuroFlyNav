@@ -139,11 +139,31 @@ def test_missing_tool_metadata_fails_with_environment_guidance(
         raise PackageNotFoundError
 
     monkeypatch.setattr(provenance, "version", missing_version)
+    monkeypatch.setattr(provenance, "_executable_version", lambda tool: None)
 
     with pytest.raises(
         provenance.ProvenanceError, match="neuroflynav Conda environment"
     ):
         provenance.build_manifest("python -m pytest", tmp_path)
+
+
+def test_tool_without_metadata_falls_back_to_executable_version(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _fake_git(monkeypatch)
+    _repository_with_environment_file(tmp_path)
+
+    def version_without_ruff(distribution: str) -> str:
+        if distribution == "ruff":
+            raise PackageNotFoundError
+        return "1.0"
+
+    monkeypatch.setattr(provenance, "version", version_without_ruff)
+    monkeypatch.setattr(provenance, "_executable_version", lambda tool: "0.17.1")
+
+    manifest = provenance.build_manifest("python -m pytest", tmp_path)
+
+    assert manifest["tools"] == {"pytest": "1.0", "ruff": "0.17.1", "mypy": "1.0"}
 
 
 def test_empty_command_is_rejected(
