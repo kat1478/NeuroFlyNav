@@ -16,6 +16,7 @@ from typing import Protocol
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.sparse import csr_matrix
 
 from neuroflynav.env.nav import Action
 from neuroflynav.env.nav_memory import (
@@ -24,7 +25,7 @@ from neuroflynav.env.nav_memory import (
     encode_observation,
 )
 from neuroflynav.graph.interface import Graph, NodeRole
-from neuroflynav.graph.matrix import scaled_for_radius, to_weight_matrix
+from neuroflynav.graph.matrix import DENSE_LIMIT, scaled_for_radius, to_weight_matrix
 
 FloatArray = NDArray[np.float64]
 
@@ -77,7 +78,10 @@ class ReservoirCore:
         motor: tuple[int, ...],
         config: ReservoirConfig,
     ) -> None:
-        self._weights = weights
+        # Large connectome reservoirs are ~5% dense: a sparse matrix makes each step much cheaper.
+        self._weights: FloatArray | csr_matrix = (
+            csr_matrix(weights) if weights.shape[0] > DENSE_LIMIT else weights
+        )
         self._input = input_matrix
         self._motor = motor
         self._config = config
@@ -126,6 +130,21 @@ def build_core_from_graph(
     return ReservoirCore(weights, input_matrix, motor, config)
 
 
+def _place_random_edges(
+    raw: FloatArray, num_edges: int, weight: float, rng: np.random.Generator
+) -> None:
+    """Vectorized version of the edge-placement loop, for large graphs."""
+    num_nodes = raw.shape[0]
+    sources: list[int] = []
+    targets: list[int] = []
+    while len(sources) < num_edges:
+        draw = rng.integers(num_nodes, size=(2, 2 * (num_edges - len(sources))))
+        keep = draw[0] != draw[1]
+        sources.extend(draw[0][keep].tolist())
+        targets.extend(draw[1][keep].tolist())
+    np.add.at(raw, (targets[:num_edges], sources[:num_edges]), weight)
+
+
 def build_random_core(
     num_nodes: int,
     num_edges: int,
@@ -140,14 +159,17 @@ def build_random_core(
         raise ValueError("num_nodes is too small for the requested roles")
     rng = np.random.default_rng(seed)
     raw = np.zeros((num_nodes, num_nodes), dtype=np.float64)
-    placed = 0
-    while placed < num_edges:
-        source = int(rng.integers(num_nodes))
-        target = int(rng.integers(num_nodes))
-        if source == target:
-            continue
-        raw[target, source] += weight
-        placed += 1
+    if num_nodes > DENSE_LIMIT:
+        _place_random_edges(raw, num_edges, weight, rng)
+    else:
+        placed = 0
+        while placed < num_edges:
+            source = int(rng.integers(num_nodes))
+            target = int(rng.integers(num_nodes))
+            if source == target:
+                continue
+            raw[target, source] += weight
+            placed += 1
     weights = scaled_for_radius(raw, config.spectral_radius)
     sensory = tuple(range(num_sensory))
     motor = tuple(range(num_nodes - num_motor, num_nodes))
