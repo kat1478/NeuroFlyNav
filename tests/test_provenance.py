@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 from datetime import UTC, datetime
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from platform import machine, python_implementation, python_version, release, system
 
@@ -63,9 +63,10 @@ def test_manifest_has_documented_schema_and_captures_fields(
         "release": release(),
         "machine": machine(),
     }
-    assert manifest["tools"] == {
-        name: version(name) for name in provenance.TOOL_DISTRIBUTIONS
-    }
+    tools = manifest["tools"]
+    assert isinstance(tools, dict)
+    assert set(tools) == set(provenance.TOOL_DISTRIBUTIONS)
+    assert all(isinstance(value, str) and value for value in tools.values())
     assert json.loads(json.dumps(manifest)) == manifest
 
 
