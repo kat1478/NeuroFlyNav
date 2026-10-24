@@ -58,6 +58,9 @@ gives the same picture: real wiring +0.03 over the degree-preserving shuffle, ce
 structure enough, and no reservoir yet integrates (all stay below a memory-only reference).
 Adding biologically placed inhibition (Δ7 and ring neurons) to the generic reservoir made it
 *worse* — a sign that the dynamics, not the wiring or the signs, are now the bottleneck.
+With *leaky* (slower) dynamics the reservoir finally integrates self-motion, beating a perfect
+memory of the last landmark by +0.07 — but so does every control, and the real wiring keeps only a
+~1-point edge. Integration comes from the dynamics; cell-type structure explains the rest.
 See [docs/spike_heading.md](docs/spike_heading.md).
 
 ## Quick start

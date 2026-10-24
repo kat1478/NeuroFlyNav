@@ -67,3 +67,34 @@ Reading: biologically placed inhibition makes this reservoir *worse*, worse even
 placed inhibition, and still nothing integrates. A ring attractor needs the right dynamics, not
 just the right signs; with a generic tanh echo-state reservoir, dynamics are the bottleneck.
 Next: model dynamics (trained recurrent gains on the CX mask, or a tuned rate model).
+
+## Leaky rate dynamics (pre-registered, seeds 40–59)
+
+The reservoir update becomes `x ← (1−α)·x + α·tanh(W·x + u)` (`--leak`). Calibrated on pilot
+sequences only: α = 0.2 (pilot Fly 0.585 vs oracle 0.525); fixed before the run.
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_heading --graph hemibrain --leak 0.2 \
+    --first-seed 40 --seeds 20                 # add --signs types for the signed variant
+```
+
+| Paired difference (accuracy) | unsigned | signed (Δ7 + ER) |
+| --- | --- | --- |
+| **FlyConnectome − oracle** | **+0.069 [+0.056, +0.081]** | +0.069 [+0.056, +0.082] |
+| ShuffledFly − oracle | +0.059 [+0.047, +0.072] | +0.059 [+0.045, +0.072] |
+| FlyConnectome − ShuffledFly | +0.009 [+0.004, +0.015] | +0.010 [+0.006, +0.014] |
+| FlyConnectome − TypeShuffledFly | −0.010 [−0.015, −0.006] | −0.012 [−0.017, −0.008] |
+| SignedFly − UnsignedFly | — | +0.000 [−0.003, +0.003] |
+| SignedFly − RandomSignFly | — | −0.001 [−0.005, +0.003] |
+
+Accuracies: FlyConnectome 0.623, TypeShuffledFly 0.633, ShuffledFly 0.613, RandomRecurrent 0.614,
+Reactive 0.116, hold-last-landmark oracle 0.554.
+
+Reading:
+- **Integration works**: with leaky dynamics the reservoir beats perfect memory of the last
+  landmark — it adds up self-motion. But every recurrent control does too, so integration
+  comes from the dynamics, not from the CX wiring.
+- Real wiring keeps a small edge over degree-preserving and random graphs (~+0.01); cell-type
+  structure is again enough (type-shuffled slightly better).
+- Signs no longer matter: the earlier harm from Δ7/ER inhibition disappears with leaky dynamics.
+- Next: train recurrent gains on the CX mask, the first setup where exact wiring could be used.
