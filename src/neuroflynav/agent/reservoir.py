@@ -2,7 +2,7 @@
 
 A graph's topology becomes a *frozen* recurrent weight matrix (the "reservoir").
 The observation is injected at sensory nodes, the state evolves through the fixed
-wiring, and only a small linear readout over the motor nodes is trained (elsewhere,
+wiring, and only a linear readout over the full reservoir state is trained (elsewhere,
 by ridge regression). This mirrors the project's intended shape — frozen connectome
 topology, trained heads — and lets topology affect what the readout can decode, so
 controls can discriminate. Dynamics (tanh), micro-steps and scaling are M0+
@@ -193,7 +193,7 @@ def build_random_core(
 
 
 class ReservoirRepresentation:
-    """Features = the motor-node state after advancing the reservoir with the observation."""
+    """Features = the full reservoir state after advancing it with the observation."""
 
     def __init__(self, core: ReservoirCore, grid_size: int) -> None:
         self._core = core
