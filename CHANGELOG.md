@@ -3,6 +3,24 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
+## [0.3.0] — 2026-10-24
+
+A harder task and a first look at synaptic signs. Both results point to the reservoir dynamics,
+not the wiring or the signs, as the current limit.
+
+### Added
+- Heading integration task (`neuroflynav.tasks.heading`, `run_heading`): landmarks every 8 steps,
+  self-motion in between, hold-last-landmark oracle as reference; pre-registered result in
+  `docs/spike_heading.md`.
+- Reservoir builders accept `input_dim` (default unchanged).
+- Exploratory cell-type sign rule (Δ7 and ER outputs inhibitory), `run_heading --signs types`
+  with RandomSignFly and UnsignedFly controls; pre-registered negative result in
+  `docs/spike_heading.md`.
+
+### Fixed
+- Reservoir docstrings now say the readout uses the full reservoir state (as implemented),
+  not only the motor nodes.
+
 ## [0.2.0] — 2026-10-21
 
 First answer to H2: on the hidden-cue task, the edge of the real CX wiring over a
@@ -42,5 +60,6 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
+[0.3.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.3.0
 [0.2.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.1.0

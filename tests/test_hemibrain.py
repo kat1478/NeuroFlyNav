@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from neuroflynav.graph.hemibrain import load_cx_subgraph, to_graph
+from neuroflynav.graph.hemibrain import (
+    inhibitory_nodes,
+    load_cx_subgraph,
+    random_inhibitory_nodes,
+    to_graph,
+)
 from neuroflynav.graph.interface import NodeRole
 
 
@@ -37,3 +42,15 @@ def test_rejects_unknown_transform(tmp_path: Path) -> None:
     _write_export(tmp_path)
     with pytest.raises(ValueError):
         to_graph(load_cx_subgraph(tmp_path), weights="sqrt")
+
+
+def test_type_sign_rule_makes_er_outputs_negative(tmp_path: Path) -> None:
+    _write_export(tmp_path)
+    subgraph = load_cx_subgraph(tmp_path)
+
+    inhibitory = inhibitory_nodes(subgraph)
+    graph = to_graph(subgraph, weights="raw", inhibitory=inhibitory)
+
+    assert inhibitory == frozenset({0})  # bodyId 10 is ER4d
+    assert [edge.weight for edge in graph.edges] == [-4.0, 1.0, 2.0]
+    assert len(random_inhibitory_nodes(subgraph, count=1, seed=0)) == 1

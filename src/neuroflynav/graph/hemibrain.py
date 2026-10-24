@@ -10,8 +10,11 @@ CX regions, and every directed edge between included neurons with total ``weight
 is kept. Export limits: only Traced neurons, ROI membership is seen only through
 synapses with other traced neurons, and ``weightHP`` is not available.
 
-Sensory/motor roles (ring ``ER*`` neurons in, ``PFL*`` neurons out) and the weight
-transforms are exploratory spike conventions, not frozen modeling choices.
+Sensory/motor roles (ring ``ER*`` neurons in, ``PFL*`` neurons out), the weight
+transforms and the optional sign rule are exploratory spike conventions, not frozen
+modeling choices. The sign rule (owner-approved for exploration, 2026-10-21) makes the
+outgoing edges of Δ7 (glutamatergic) and ring ``ER*`` (GABAergic) neurons inhibitory and
+everything else excitatory — a simplified evidence-constrained camp (TASK-013 camp B).
 """
 
 from __future__ import annotations
@@ -22,9 +25,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
+
 from neuroflynav.graph.interface import Edge, Graph, NodeRole
 
 CX_ROIS = frozenset({"AB(L)", "AB(R)", "EB", "FB", "NO", "PB"})
+INHIBITORY_TYPE_PREFIXES = ("Delta7", "ER")
 DEFAULT_DATA_DIR = Path("data/hemibrain/v1.2/exported-traced-adjacencies-v1.2")
 
 WEIGHT_TRANSFORMS: dict[str, Callable[[int], float]] = {
@@ -98,19 +104,47 @@ def _role(cell_type: str, sensory: tuple[str, ...], motor: tuple[str, ...]) -> N
     return NodeRole.INTERNAL
 
 
+def inhibitory_nodes(
+    subgraph: CXSubgraph, prefixes: tuple[str, ...] = INHIBITORY_TYPE_PREFIXES
+) -> frozenset[int]:
+    """Indices of neurons whose cell type marks them inhibitory under the spike rule."""
+    return frozenset(
+        index
+        for index, cell_type in enumerate(subgraph.cell_types)
+        if cell_type.startswith(prefixes)
+    )
+
+
+def random_inhibitory_nodes(
+    subgraph: CXSubgraph, count: int, seed: int
+) -> frozenset[int]:
+    """Control: the same number of inhibitory neurons, chosen at random."""
+    rng = np.random.default_rng(seed)
+    chosen = rng.choice(len(subgraph.body_ids), size=count, replace=False)
+    return frozenset(int(index) for index in chosen)
+
+
 def to_graph(
     subgraph: CXSubgraph,
     weights: str = "raw",
     sensory_prefixes: tuple[str, ...] = ("ER",),
     motor_prefixes: tuple[str, ...] = ("PFL",),
+    inhibitory: frozenset[int] = frozenset(),
 ) -> Graph:
-    """Turn the subgraph into a `Graph` using one candidate weight transform."""
+    """Turn the subgraph into a `Graph` using one candidate weight transform.
+
+    Edges leaving a neuron in ``inhibitory`` get a negative weight (one sign per
+    presynaptic neuron, Dale's principle); the default keeps every edge positive.
+    """
     if weights not in WEIGHT_TRANSFORMS:
         raise ValueError(f"unknown weight transform {weights!r}")
     transform = WEIGHT_TRANSFORMS[weights]
     return Graph(
         num_nodes=len(subgraph.body_ids),
-        edges=tuple(Edge(s, t, transform(w)) for s, t, w in subgraph.edges),
+        edges=tuple(
+            Edge(s, t, -transform(w) if s in inhibitory else transform(w))
+            for s, t, w in subgraph.edges
+        ),
         roles=tuple(
             _role(cell_type, sensory_prefixes, motor_prefixes)
             for cell_type in subgraph.cell_types

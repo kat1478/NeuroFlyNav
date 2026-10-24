@@ -2,7 +2,7 @@
 
 A graph's topology becomes a *frozen* recurrent weight matrix (the "reservoir").
 The observation is injected at sensory nodes, the state evolves through the fixed
-wiring, and only a small linear readout over the motor nodes is trained (elsewhere,
+wiring, and only a linear readout over the full reservoir state is trained (elsewhere,
 by ridge regression). This mirrors the project's intended shape — frozen connectome
 topology, trained heads — and lets topology affect what the readout can decode, so
 controls can discriminate. Dynamics (tanh), micro-steps and scaling are M0+
@@ -59,12 +59,16 @@ class MemoryPolicy(Protocol):
 
 
 def _sensory_input_matrix(
-    num_nodes: int, sensory: tuple[int, ...], scale: float, seed: int
+    num_nodes: int,
+    sensory: tuple[int, ...],
+    scale: float,
+    seed: int,
+    input_dim: int = FEATURE_DIM,
 ) -> FloatArray:
     rng = np.random.default_rng(seed)
-    matrix = np.zeros((num_nodes, FEATURE_DIM), dtype=np.float64)
+    matrix = np.zeros((num_nodes, input_dim), dtype=np.float64)
     for node in sensory:
-        matrix[node, :] = rng.standard_normal(FEATURE_DIM) * scale
+        matrix[node, :] = rng.standard_normal(input_dim) * scale
     return matrix
 
 
@@ -116,7 +120,7 @@ class ReservoirCore:
 
 
 def build_core_from_graph(
-    graph: Graph, config: ReservoirConfig, seed: int
+    graph: Graph, config: ReservoirConfig, seed: int, input_dim: int = FEATURE_DIM
 ) -> ReservoirCore:
     """Build a reservoir whose frozen weights come from a graph's topology."""
     weights = scaled_for_radius(to_weight_matrix(graph), config.spectral_radius)
@@ -125,13 +129,17 @@ def build_core_from_graph(
     if not sensory or not motor:
         raise ValueError("graph must have at least one sensory and one motor node")
     input_matrix = _sensory_input_matrix(
-        graph.num_nodes, sensory, config.input_scale, seed
+        graph.num_nodes, sensory, config.input_scale, seed, input_dim
     )
     return ReservoirCore(weights, input_matrix, motor, config)
 
 
 def _place_random_edges(
-    raw: FloatArray, num_edges: int, weight: float, rng: np.random.Generator
+    raw: FloatArray,
+    num_edges: int,
+    weight: float,
+    rng: np.random.Generator,
+    inhibitory_fraction: float = 0.0,
 ) -> None:
     """Vectorized version of the edge-placement loop, for large graphs."""
     num_nodes = raw.shape[0]
@@ -142,7 +150,10 @@ def _place_random_edges(
         keep = draw[0] != draw[1]
         sources.extend(draw[0][keep].tolist())
         targets.extend(draw[1][keep].tolist())
-    np.add.at(raw, (targets[:num_edges], sources[:num_edges]), weight)
+    values = np.full(num_edges, weight)
+    if inhibitory_fraction > 0:
+        values[rng.random(num_edges) < inhibitory_fraction] *= -1.0
+    np.add.at(raw, (targets[:num_edges], sources[:num_edges]), values)
 
 
 def build_random_core(
@@ -153,6 +164,8 @@ def build_random_core(
     weight: float,
     config: ReservoirConfig,
     seed: int,
+    input_dim: int = FEATURE_DIM,
+    inhibitory_fraction: float = 0.0,
 ) -> ReservoirCore:
     """Build a reservoir from a random directed graph with a matched edge count."""
     if num_sensory + num_motor > num_nodes:
@@ -160,7 +173,7 @@ def build_random_core(
     rng = np.random.default_rng(seed)
     raw = np.zeros((num_nodes, num_nodes), dtype=np.float64)
     if num_nodes > DENSE_LIMIT:
-        _place_random_edges(raw, num_edges, weight, rng)
+        _place_random_edges(raw, num_edges, weight, rng, inhibitory_fraction)
     else:
         placed = 0
         while placed < num_edges:
@@ -174,13 +187,13 @@ def build_random_core(
     sensory = tuple(range(num_sensory))
     motor = tuple(range(num_nodes - num_motor, num_nodes))
     input_matrix = _sensory_input_matrix(
-        num_nodes, sensory, config.input_scale, seed + 1
+        num_nodes, sensory, config.input_scale, seed + 1, input_dim
     )
     return ReservoirCore(weights, input_matrix, motor, config)
 
 
 class ReservoirRepresentation:
-    """Features = the motor-node state after advancing the reservoir with the observation."""
+    """Features = the full reservoir state after advancing it with the observation."""
 
     def __init__(self, core: ReservoirCore, grid_size: int) -> None:
         self._core = core
