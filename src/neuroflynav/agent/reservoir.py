@@ -40,6 +40,13 @@ class ReservoirConfig:
     micro_steps: int = 3
     spectral_radius: float = 1.1
     input_scale: float = 0.6
+    leak: float = (
+        1.0  # 1.0 = plain tanh update; < 1 = leaky rate model (slower, longer memory)
+    )
+
+    def __post_init__(self) -> None:
+        if not 0 < self.leak <= 1:
+            raise ValueError("leak must be in (0, 1]")
 
 
 class Representation(Protocol):
@@ -114,7 +121,10 @@ class ReservoirCore:
         state = self._state
         for _ in range(self._config.micro_steps):
             activated: FloatArray = np.tanh(self._weights @ state + drive)
-            state = activated
+            leak = self._config.leak
+            state = (
+                activated if leak == 1.0 else (1.0 - leak) * state + leak * activated
+            )
         self._state = state
         return state
 
