@@ -63,6 +63,10 @@ memory of the last landmark by +0.07 — but so does every control, and the real
 ~1-point edge. Integration comes from the dynamics; cell-type structure explains the rest.
 See [docs/spike_heading.md](docs/spike_heading.md).
 
+Training the recurrent weights on the compass-core mask (409 neurons) makes a much better
+integrator (0.84 vs 0.52 frozen) — but a random mask of the same density trains just as well.
+See [docs/spike_trained.md](docs/spike_trained.md).
+
 ## Quick start
 
 ```bash
@@ -89,6 +93,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_m0plus.md](docs/spike_m0plus.md) | M0+: hidden-cue task and reservoir, so topologies can be told apart |
 | [docs/spike_m1.md](docs/spike_m1.md) | M1: real hemibrain CX wiring, data download, multi-seed results |
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
+| [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core), pre-registered result |
 | [docs/reproducibility.md](docs/reproducibility.md) | Provenance capture for runs |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 

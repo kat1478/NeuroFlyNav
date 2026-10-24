@@ -9,6 +9,13 @@ All notable changes to this project are documented here. Versions follow
 - Leaky rate update for the reservoir (`ReservoirConfig.leak`, `run_heading --leak`); default
   unchanged. Pre-registered heading result: integration beats a memory-only oracle, for the CX
   graph and for every control alike; signs no longer matter.
+- Masked rate RNN with recurrent weights trained on a graph mask (`training.masked_rnn`,
+  `run_trained`), compass-core restriction (`graph.hemibrain.restrict`); PyTorch (CPU) added.
+  Pre-registered result in `docs/spike_trained.md`: training helps, the real mask does not beat
+  a random mask of the same density.
+
+### Fixed
+- `.gitignore` ignores `/data` also when it is a symlink (worktrees).
 
 ## [0.3.0] — 2026-10-24
 
