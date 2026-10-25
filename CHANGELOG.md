@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
+## [Unreleased]
+
+### Added
+- Leaky rate update for the reservoir (`ReservoirConfig.leak`, `run_heading --leak`); default
+  unchanged. Pre-registered heading result: integration beats a memory-only oracle, for the CX
+  graph and for every control alike; signs no longer matter.
+
 ## [0.3.0] — 2026-10-24
 
 A harder task and a first look at synaptic signs. Both results point to the reservoir dynamics,
