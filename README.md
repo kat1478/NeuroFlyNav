@@ -16,6 +16,11 @@ topology is a hypothesis to test, not an assumption; a negative result is a vali
 > neurons, 467,579 connections). Dynamics, inputs and readout are placeholders, and no
 > experiment has been frozen yet. Numbers below are a first look, not a scientific claim.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/cx-wiring-dark.png">
+  <img alt="Heatmap of synapse counts between cell-type families of the fly central complex; dense blocks within the compass (ER, EPG, PEN, Δ7) and within the fan-shaped body (PFN, hΔ, vΔ, FC, FB)." src="docs/figures/cx-wiring-light.png" width="100%">
+</picture>
+
 ## How it works
 
 ```
@@ -33,6 +38,26 @@ hemibrain v1.2 connectome ──► CX subgraph ──► frozen recurrent "rese
 4. **Training** — only the readout is learned, by imitating an expert (`neuroflynav.training`).
 5. **Controls** — `ShuffledFly` (degree-preserving rewiring), `TypeShuffledFly` (rewiring within
    cell types), `RandomRecurrent` (matched edge count), `Reactive` (no memory).
+
+## Results at a glance
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/results-forest-dark.png">
+  <img alt="Forest plot: real CX wiring minus each control, four pre-registered experiments. Small edges over degree-shuffled and random wiring with frozen reservoirs (+1 to +6 points), none over wiring shuffled within cell types, and none once weights are trained." src="docs/figures/results-forest-light.png" width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/heading-progression-dark.png">
+  <img alt="Heading accuracy rises from 11% (no memory) to 39% (tanh reservoir), 62% (leaky reservoir) and 84% (trained weights); real and shuffled wiring stay within 3 points at every stage." src="docs/figures/heading-progression-light.png" width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/learning-curve-dark.png">
+  <img alt="Accuracy versus training sequences (16 to 256) for trained masks: random wiring is slightly ahead at 16-64 sequences, all converge at 256; the frozen reservoir stays near 50%." src="docs/figures/learning-curve-light.png" width="100%">
+</picture>
+
+Numbers behind every chart: the tables in `docs/spike_*.md`. Rebuild the figures with
+`PYTHONPATH=src python -m neuroflynav.reporting.figures`.
 
 ## First look (20 seeds)
 
