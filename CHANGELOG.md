@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
+## [Unreleased]
+
+### Added
+- Low-data regime for the trained compass core (16 / 32 / 64 training sequences), pre-registered:
+  the real mask trains slightly worse than a random mask of the same density (pooled −0.024).
+
+### Fixed
+- Training batch is capped at the number of training sequences.
+
 ## [0.4.0] — 2026-10-25
 
 Learning dynamics: leaky (slower) dynamics make the network integrate self-motion, and training
