@@ -12,7 +12,7 @@ of a navigation agent. It then compares that agent against fair controls: the sa
 shuffled, a random network of the same size, and a network with no memory at all. Biological
 topology is a hypothesis to test, not an assumption; a negative result is a valid outcome.
 
-> **Status: v0.3.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> **Status: v0.4.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections). Dynamics, inputs and readout are placeholders, and no
 > experiment has been frozen yet. Numbers below are a first look, not a scientific claim.
 
@@ -58,7 +58,14 @@ gives the same picture: real wiring +0.03 over the degree-preserving shuffle, ce
 structure enough, and no reservoir yet integrates (all stay below a memory-only reference).
 Adding biologically placed inhibition (Δ7 and ring neurons) to the generic reservoir made it
 *worse* — a sign that the dynamics, not the wiring or the signs, are now the bottleneck.
+With *leaky* (slower) dynamics the reservoir finally integrates self-motion, beating a perfect
+memory of the last landmark by +0.07 — but so does every control, and the real wiring keeps only a
+~1-point edge. Integration comes from the dynamics; cell-type structure explains the rest.
 See [docs/spike_heading.md](docs/spike_heading.md).
+
+Training the recurrent weights on the compass-core mask (409 neurons) makes a much better
+integrator (0.84 vs 0.52 frozen) — but a random mask of the same density trains just as well.
+See [docs/spike_trained.md](docs/spike_trained.md).
 
 ## Quick start
 
@@ -86,6 +93,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_m0plus.md](docs/spike_m0plus.md) | M0+: hidden-cue task and reservoir, so topologies can be told apart |
 | [docs/spike_m1.md](docs/spike_m1.md) | M1: real hemibrain CX wiring, data download, multi-seed results |
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
+| [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core), pre-registered result |
 | [docs/reproducibility.md](docs/reproducibility.md) | Provenance capture for runs |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 

@@ -3,6 +3,24 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
+## [0.4.0] — 2026-10-25
+
+Learning dynamics: leaky (slower) dynamics make the network integrate self-motion, and training
+the recurrent weights on the compass-core mask makes it a strong integrator. In both cases the
+real CX wiring is no better than shuffled or random wiring of the same density.
+
+### Added
+- Leaky rate update for the reservoir (`ReservoirConfig.leak`, `run_heading --leak`); default
+  unchanged. Pre-registered heading result: integration beats a memory-only oracle, for the CX
+  graph and for every control alike; signs no longer matter.
+- Masked rate RNN with recurrent weights trained on a graph mask (`training.masked_rnn`,
+  `run_trained`), compass-core restriction (`graph.hemibrain.restrict`); PyTorch (CPU) added.
+  Pre-registered result in `docs/spike_trained.md`: training helps, the real mask does not beat
+  a random mask of the same density.
+
+### Fixed
+- `.gitignore` ignores `/data` also when it is a symlink (worktrees).
+
 ## [0.3.0] — 2026-10-24
 
 A harder task and a first look at synaptic signs. Both results point to the reservoir dynamics,
@@ -60,6 +78,7 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
+[0.4.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.4.0
 [0.3.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.3.0
 [0.2.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.1.0

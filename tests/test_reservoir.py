@@ -67,3 +67,30 @@ def test_linear_policy_returns_valid_action() -> None:
     observation, _ = env.reset(seed=0)
     policy.reset()
     assert isinstance(policy.act(observation), Action)
+
+
+def test_leaky_update_blends_old_state_and_activation() -> None:
+    import numpy as np
+
+    from neuroflynav.agent.reservoir import ReservoirConfig, ReservoirCore
+
+    weights = np.zeros((2, 2))
+    inputs = np.eye(2, 6)
+    config = ReservoirConfig(micro_steps=1, leak=0.25)
+    core = ReservoirCore(weights, inputs, motor=(1,), config=config)
+    features = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+
+    first = core.step(features)
+    second = core.step(features)
+
+    assert first[0] == np.tanh(1.0) * 0.25
+    assert second[0] == 0.75 * first[0] + 0.25 * np.tanh(1.0)
+
+
+def test_leak_must_be_in_unit_interval() -> None:
+    import pytest
+
+    from neuroflynav.agent.reservoir import ReservoirConfig
+
+    with pytest.raises(ValueError):
+        ReservoirConfig(leak=0.0)

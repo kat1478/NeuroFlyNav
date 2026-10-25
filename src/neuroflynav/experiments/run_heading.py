@@ -240,6 +240,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--steps", type=int, default=40)
     parser.add_argument("--micro-steps", type=int, default=1)
     parser.add_argument("--radius", type=float, default=1.1)
+    parser.add_argument("--leak", type=float, default=1.0)
     parser.add_argument(
         "--signs",
         choices=("none", "types"),
@@ -270,7 +271,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         turn_std=arguments.turn_std,
     )
     reservoir = ReservoirConfig(
-        micro_steps=arguments.micro_steps, spectral_radius=arguments.radius
+        micro_steps=arguments.micro_steps,
+        spectral_radius=arguments.radius,
+        leak=arguments.leak,
     )
     per_seed: list[dict[str, HeadingScore]] = []
     oracle: list[float] = []
