@@ -12,7 +12,7 @@ of a navigation agent. It then compares that agent against fair controls: the sa
 shuffled, a random network of the same size, and a network with no memory at all. Biological
 topology is a hypothesis to test, not an assumption; a negative result is a valid outcome.
 
-> **Status: v0.3.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> **Status: v0.4.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections). Dynamics, inputs and readout are placeholders, and no
 > experiment has been frozen yet. Numbers below are a first look, not a scientific claim.
 

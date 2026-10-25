@@ -1,6 +1,6 @@
 [project]
 name = "neuroflynav"
-version = "0.3.0"
+version = "0.4.0"
 description = "Connectome-constrained navigation with the Drosophila central complex"
 readme = "README.md"
 license = "MIT"
