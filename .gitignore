@@ -24,4 +24,4 @@ checkpoints/
 artifacts/
 
 # Local datasets (never committed)
-data/
+/data

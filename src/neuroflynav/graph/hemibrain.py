@@ -86,6 +86,29 @@ def load_cx_subgraph(data_dir: Path = DEFAULT_DATA_DIR) -> CXSubgraph:
     )
 
 
+COMPASS_CORE_PREFIXES = ("EPG", "PEN", "PEG", "Delta7", "ER")
+
+
+def restrict(subgraph: CXSubgraph, prefixes: tuple[str, ...]) -> CXSubgraph:
+    """Keep only neurons whose cell type starts with one of ``prefixes`` (re-indexed)."""
+    keep = [
+        i
+        for i, cell_type in enumerate(subgraph.cell_types)
+        if cell_type.startswith(prefixes)
+    ]
+    index = {old: new for new, old in enumerate(keep)}
+    edges = tuple(
+        (index[s], index[t], w)
+        for s, t, w in subgraph.edges
+        if s in index and t in index
+    )
+    return CXSubgraph(
+        body_ids=tuple(subgraph.body_ids[i] for i in keep),
+        cell_types=tuple(subgraph.cell_types[i] for i in keep),
+        edges=edges,
+    )
+
+
 def node_groups(subgraph: CXSubgraph) -> tuple[str, ...]:
     """Cell-type label per node; each untyped neuron is its own group."""
     return tuple(
