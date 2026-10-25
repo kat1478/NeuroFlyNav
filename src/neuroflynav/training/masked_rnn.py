@@ -112,7 +112,9 @@ def train_and_score(
     )
     for _ in range(config.steps):
         batch = torch.tensor(
-            generator.choice(len(inputs), size=config.batch_size, replace=False)
+            generator.choice(
+                len(inputs), size=min(config.batch_size, len(inputs)), replace=False
+            )
         )
         logits = model(inputs[batch])[:, mask]
         loss = torch.nn.functional.cross_entropy(
