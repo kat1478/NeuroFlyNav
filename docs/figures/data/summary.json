@@ -1,0 +1,151 @@
+{
+  "_source": "Pre-registered results; full tables in docs/spike_m1.md, docs/spike_heading.md, docs/spike_trained.md. Values are [low, mean, high] of the 95% CI of the paired difference FlyConnectome minus control, or mean accuracies.",
+  "forest": [
+    {
+      "label": "Hidden-cue grid task\nfrozen reservoir (seeds 20–39)",
+      "diff": {
+        "ShuffledFly": [
+          0.017,
+          0.061,
+          0.105
+        ],
+        "TypeShuffledFly": [
+          -0.048,
+          -0.014,
+          0.02
+        ],
+        "RandomRecurrent": [
+          0.023,
+          0.059,
+          0.095
+        ]
+      }
+    },
+    {
+      "label": "Heading task\nfrozen tanh reservoir (seeds 0–19)",
+      "diff": {
+        "ShuffledFly": [
+          0.017,
+          0.031,
+          0.044
+        ],
+        "TypeShuffledFly": [
+          -0.037,
+          -0.019,
+          -0.001
+        ],
+        "RandomRecurrent": [
+          0.018,
+          0.033,
+          0.048
+        ]
+      }
+    },
+    {
+      "label": "Heading task\nfrozen leaky reservoir (seeds 40–59)",
+      "diff": {
+        "ShuffledFly": [
+          0.004,
+          0.009,
+          0.015
+        ],
+        "TypeShuffledFly": [
+          -0.015,
+          -0.01,
+          -0.006
+        ],
+        "RandomRecurrent": [
+          0.003,
+          0.009,
+          0.015
+        ]
+      }
+    },
+    {
+      "label": "Heading task\ntrained weights, compass core (seeds 0–19)",
+      "diff": {
+        "ShuffledFly": [
+          -0.005,
+          -0.0,
+          0.004
+        ],
+        "TypeShuffledFly": [
+          0.0004,
+          0.007,
+          0.014
+        ],
+        "RandomRecurrent": [
+          -0.007,
+          -0.001,
+          0.005
+        ]
+      }
+    }
+  ],
+  "progression": [
+    {
+      "label": "no memory\n(reactive, no graph)",
+      "FlyConnectome": 0.115,
+      "ShuffledFly": 0.115,
+      "no_wiring": true
+    },
+    {
+      "label": "frozen reservoir\n(tanh)",
+      "FlyConnectome": 0.389,
+      "ShuffledFly": 0.359
+    },
+    {
+      "label": "frozen reservoir\n(leaky dynamics)",
+      "FlyConnectome": 0.623,
+      "ShuffledFly": 0.613
+    },
+    {
+      "label": "trained weights\n(compass core)",
+      "FlyConnectome": 0.844,
+      "ShuffledFly": 0.844
+    }
+  ],
+  "references": {
+    "oracle": 0.56,
+    "chance": 0.125
+  },
+  "learning": {
+    "_note": "n = 16/32/64: seeds 20-39 (low-data run); n = 256: seeds 0-19 (trained-core run)",
+    "sizes": [
+      16,
+      32,
+      64,
+      256
+    ],
+    "FlyConnectome": [
+      0.371,
+      0.57,
+      0.762,
+      0.844
+    ],
+    "RandomRecurrent": [
+      0.392,
+      0.605,
+      0.78,
+      0.845
+    ],
+    "ShuffledFly": [
+      0.38,
+      0.578,
+      0.763,
+      0.844
+    ],
+    "TypeShuffledFly": [
+      0.367,
+      0.551,
+      0.744,
+      0.837
+    ],
+    "FrozenFly": [
+      0.45,
+      0.52,
+      0.496,
+      0.519
+    ]
+  }
+}
