@@ -64,7 +64,8 @@ memory of the last landmark by +0.07 — but so does every control, and the real
 See [docs/spike_heading.md](docs/spike_heading.md).
 
 Training the recurrent weights on the compass-core mask (409 neurons) makes a much better
-integrator (0.84 vs 0.52 frozen) — but a random mask of the same density trains just as well.
+integrator (0.84 vs 0.52 frozen) — but a random mask of the same density trains just as well,
+and with scarce data even slightly better (−2.4 points for the real mask, pre-registered).
 See [docs/spike_trained.md](docs/spike_trained.md).
 
 ## Quick start
