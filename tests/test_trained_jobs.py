@@ -5,6 +5,7 @@ from neuroflynav.experiments.aggregate_trained import aggregate
 from neuroflynav.experiments.run_trained import (
     VARIANTS,
     build_variant,
+    job_from_index,
     run_job,
     summarize,
 )
@@ -86,3 +87,11 @@ def test_aggregate_rejects_incomplete_duplicate_or_mixed_jobs() -> None:
         aggregate([*complete, complete[0]])
     with pytest.raises(ValueError, match="differs in"):
         aggregate([*complete[:-1], _job("RandomMask", 0, 0.5, train=8)])
+
+
+def test_array_index_covers_every_variant_seed_pair_once() -> None:
+    jobs = [job_from_index(i, first_seed=40) for i in range(10)]
+    assert sorted(jobs) == sorted((v, s) for s in (40, 41) for v in VARIANTS)
+    assert job_from_index(7, first_seed=40) == (VARIANTS[2], 41)
+    with pytest.raises(ValueError):
+        job_from_index(-1, first_seed=0)
