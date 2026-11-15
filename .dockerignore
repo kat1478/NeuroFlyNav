@@ -1,0 +1,7 @@
+# Only environment.yml, pyproject.toml, src/ and docker/ are needed in the image.
+*
+!environment.yml
+!pyproject.toml
+!src/
+!docker/entrypoint.sh
+**/__pycache__

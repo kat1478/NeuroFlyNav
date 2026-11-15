@@ -69,6 +69,13 @@ VARIANTS = (
 )
 
 
+def job_from_index(index: int, first_seed: int) -> tuple[str, int]:
+    """Map an array-job index to (variant, seed): five consecutive indices per seed."""
+    if index < 0:
+        raise ValueError("array index must be non-negative")
+    return VARIANTS[index % len(VARIANTS)], first_seed + index // len(VARIANTS)
+
+
 def _dataset(task: HeadingTaskConfig, seeds: range) -> tuple[np.ndarray, np.ndarray]:
     pairs = [generate_sequence(task, seed) for seed in seeds]
     return np.stack([p[0] for p in pairs]), np.stack([p[1] for p in pairs])
@@ -164,8 +171,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--variant", choices=VARIANTS, help="run one job: this variant only"
     )
     parser.add_argument("--seed", type=int, help="run one job: this seed only")
+    parser.add_argument(
+        "--array-index",
+        type=int,
+        help="run one job chosen by array index (with --first-seed), as on AWS Batch",
+    )
     parser.add_argument("--output", type=Path, default=Path("results/trained/run.json"))
     arguments = parser.parse_args(argv)
+    if arguments.array_index is not None:
+        if arguments.variant is not None or arguments.seed is not None:
+            parser.error("--array-index replaces --variant and --seed")
+        arguments.variant, arguments.seed = job_from_index(
+            arguments.array_index, arguments.first_seed
+        )
     if (arguments.variant is None) != (arguments.seed is None):
         parser.error("--variant and --seed must be given together")
 
