@@ -23,6 +23,17 @@ sequences, scored on 64 held-out sequences.
 PYTHONPATH=src python -m neuroflynav.experiments.run_trained --core --seeds 20
 ```
 
+The same experiment can run as independent (variant, seed) jobs, for example one cloud
+array task each, and be merged afterwards. The merged summary is identical to the
+sequential run because every job seeds its own data, mask and training:
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_trained --core \
+    --variant ShuffledFly --seed 4 --output results/trained/jobs/ShuffledFly-4.json
+PYTHONPATH=src python -m neuroflynav.experiments.aggregate_trained results/trained/jobs \
+    --output results/trained/run.json
+```
+
 ## Pre-registered result (seeds 0–19)
 
 | Variant | Accuracy | Fly − variant (paired) |
