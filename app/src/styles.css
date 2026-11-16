@@ -139,3 +139,140 @@ h2 {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* ---------- shared view components ---------- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(180px, auto) 1fr;
+  gap: 16px 28px;
+  align-items: center;
+  margin: 24px 0 8px;
+  padding: 20px 24px;
+  background: var(--raised);
+  border: 1px solid var(--grid);
+  border-radius: 12px;
+}
+.hero-number {
+  display: flex;
+  flex-direction: column;
+}
+.hero-value {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.hero-ci {
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.hero-text {
+  margin: 0;
+  color: var(--ink-2);
+}
+.hero-text strong {
+  color: var(--ink);
+}
+@media (max-width: 560px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+}
+.card {
+  margin: 28px 0 0;
+  padding: 20px 20px 16px;
+  background: var(--raised);
+  border: 1px solid var(--grid);
+  border-radius: 12px;
+}
+.card h2 {
+  margin-top: 0;
+}
+.chart {
+  width: 100%;
+  overflow: hidden;
+}
+.chart svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 8px 0 12px;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+.legend-item {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.legend-glyph {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+.segmented button {
+  padding: 5px 12px;
+  border: 1px solid var(--grid);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+.link-button {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.table-slot {
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.data-table caption {
+  text-align: left;
+  color: var(--muted);
+  padding-bottom: 4px;
+}
+.data-table th,
+.data-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--grid);
+  text-align: left;
+}
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
