@@ -11,6 +11,8 @@ export interface Palette {
   muted: string;
   grid: string;
   baseline: string;
+  rampLo: string;
+  rampHi: string;
   series: Record<Series, string>;
 }
 
@@ -42,6 +44,8 @@ export function palette(): Palette {
     muted: v("--muted"),
     grid: v("--grid"),
     baseline: v("--baseline"),
+    rampLo: v("--ramp-lo"),
+    rampHi: v("--ramp-hi"),
     series: {
       FlyConnectome: v("--fly"),
       ShuffledFly: v("--shuffled"),
