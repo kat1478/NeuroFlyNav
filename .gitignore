@@ -25,3 +25,12 @@ artifacts/
 
 # Local datasets (never committed)
 /data
+
+# Terraform (state can contain account details; tfvars holds personal settings)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+tfplan
