@@ -1,7 +1,8 @@
 # Interactive web app
 
 A static web app in [`app/`](../app/) shows the results to visitors:
-**[kat1478.github.io/NeuroFlyNav](https://kat1478.github.io/NeuroFlyNav/)**.
+**[kat1478.github.io/NeuroFlyNav](https://kat1478.github.io/NeuroFlyNav/)**
+(AWS mirror: [d20rmxnlajencb.cloudfront.net](https://d20rmxnlajencb.cloudfront.net)).
 
 | View | What it shows |
 | --- | --- |

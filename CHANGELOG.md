@@ -5,6 +5,32 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-11-16
+
+Interactive results explorer (start of M4): a static web app with the pre-registered results,
+the central-complex wiring and a replay of the heading task, published on GitHub Pages and
+mirrored on AWS (S3 + CloudFront). No new experiments.
+
+### Added
+- Web app in `app/` (Vite, TypeScript, Observable Plot; Node from conda-forge, npm dependencies
+  pinned by lockfile). Three views:
+  - **Results:** headline result, forest plot of all pre-registered comparisons, per-seed
+    differences, learning curve; hover tips and a table view for every chart.
+  - **Wiring:** synapses between the 19 cell-type families of the hemibrain CX, family cards,
+    and a glossary of abbreviations and brain regions.
+  - **Replay:** two trained whole-CX networks (real vs random wiring) tracking heading step by
+    step, with an honest note that the edge appears only over 20 seeds.
+- Data export `neuroflynav.reporting.app_data` (family-level aggregates and synthetic-task
+  traces only); `masked_rnn.train_model` / `predict`, `heading.generate_trajectory`.
+- Deployment: GitHub Pages workflow (on release); Terraform `infra/site.tf` (private S3 bucket,
+  CloudFront with Origin Access Control, HTTPS only, managed security headers);
+  `make deploy-aws`. Docs: `docs/app.md`.
+- CI: `App` job (lint, format, typecheck, tests, build).
+
+### Checks
+- Independent UI/UX audit (20 findings, all fixed); light/dark and narrow layouts checked.
+- Stored results reproduce exactly after the training refactor (`train_and_score` unchanged).
+
 ## [0.5.0] — 2026-11-16
 
 Cloud (M3): the trained-mask experiment runs as containerised AWS Batch sweeps defined in
