@@ -1,0 +1,65 @@
+name: Pages
+
+# Publish the web app in app/ to GitHub Pages from master (releases) or on demand.
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "app/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build app
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash -el {0}
+        working-directory: app
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Create Node environment (conda-forge)
+        uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39
+        with:
+          environment-file: app/environment.yml
+          cache-environment: false
+
+      - name: Install, check and build
+        run: |
+          npm ci --no-fund --no-audit
+          npm run check
+          npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          path: app/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

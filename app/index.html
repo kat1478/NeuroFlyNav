@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Does the wiring of a fly's navigation centre make a better brain for an artificial agent? Interactive results of NeuroFlyNav."
+    />
+    <title>NeuroFlyNav Explorer</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <a href="#/results" class="brand-name">NeuroFlyNav</a>
+        <span class="brand-tag">fly connectome × navigation agent</span>
+      </div>
+      <nav class="tabs" aria-label="Views">
+        <a href="#/results" data-view="results">Results</a>
+        <a href="#/wiring" data-view="wiring">Wiring</a>
+        <a href="#/replay" data-view="replay">Replay</a>
+      </nav>
+    </header>
+    <main id="view" tabindex="-1"></main>
+    <footer class="site-footer">
+      Exploratory research ·
+      <a href="https://github.com/kat1478/NeuroFlyNav">code and docs on GitHub</a> · connectome:
+      hemibrain v1.2, Janelia FlyEM, CC BY 4.0
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
