@@ -15,7 +15,7 @@ topology is a hypothesis to test, not an assumption; a negative result is a vali
 > **Status: v0.5.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Dynamics,
 > inputs and readout are placeholders, and no experiment has been frozen yet. Numbers below
-> are pre-registered first looks, not a scientific claim.
+> are first looks (most of them pre-registered), not a scientific claim.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/cx-wiring-dark.png">
@@ -44,7 +44,7 @@ hemibrain v1.2 connectome ──► CX subgraph ──► frozen recurrent "rese
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/results-forest-dark.png">
-  <img alt="Forest plot: real CX wiring minus each control, five pre-registered experiments. Small edges over degree-shuffled and random wiring with frozen reservoirs (+1 to +6 points) and none over wiring shuffled within cell types; with trained weights no edge on the dense compass core, but on the sparse whole CX the real wiring beats all three controls (+1 to +4 points)." src="docs/figures/results-forest-light.png" width="100%">
+  <img alt="Forest plot: real CX wiring minus each control, five pre-registered experiments. Small edges over degree-shuffled and random wiring with frozen reservoirs (+1 to +6 points) and none over wiring shuffled within cell types; with trained weights no edge over random or degree-shuffled masks on the dense compass core, but on the sparse whole CX the real wiring beats all three controls (+1 to +4 points)." src="docs/figures/results-forest-light.png" width="100%">
 </picture>
 
 <picture>
@@ -95,7 +95,7 @@ and with scarce data even slightly better (−2.4 points for the real mask, pre-
 The compass core is dense (26% of all possible connections). On the **whole CX** (5.3%), run as
 100 cloud jobs, the picture changes: the real wiring trains better than a random mask of the
 same size (**+2.8 points [+2.1, +3.6]**, the pre-registered test) and than a degree-preserving
-shuffle (+3.7). Shuffling within cell types costs only +1.1, so cell-type structure again
+shuffle (+3.7). Shuffling within cell types costs only +1.1, so cell-type structure
 carries most of the advantage. One task, one model, one training budget — a lead, not a
 conclusion. See [docs/spike_trained.md](docs/spike_trained.md).
 
