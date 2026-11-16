@@ -247,8 +247,8 @@ def plot_forest(summary: dict[str, object], theme: Theme) -> Figure:
         "TypeShuffledFly": "vs wiring shuffled within cell types",
         "RandomRecurrent": "vs random wiring",
     }
-    fig, ax = plt.subplots(figsize=(9.0, 5.2), dpi=200)
-    fig.subplots_adjust(left=0.36, right=0.97, top=0.78, bottom=0.16)
+    fig, ax = plt.subplots(figsize=(9.0, 6.0), dpi=200)
+    fig.subplots_adjust(left=0.36, right=0.97, top=0.81, bottom=0.15)
     offsets = (0.22, 0.0, -0.22)  # same top-to-bottom order as the legend
     for position, row in enumerate(rows):
         y = len(rows) - 1 - position
@@ -312,7 +312,7 @@ def plot_forest(summary: dict[str, object], theme: Theme) -> Figure:
     _titles(
         fig,
         theme,
-        "Does the real wiring help? A little — and less as models get better",
+        "A small edge — only the trained whole CX beats every control",
         "Pre-registered comparisons on fresh seeds; every gap is within ~6 points of zero",
     )
     return fig

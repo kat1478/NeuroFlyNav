@@ -12,9 +12,10 @@ of a navigation agent. It then compares that agent against fair controls: the sa
 shuffled, a random network of the same size, and a network with no memory at all. Biological
 topology is a hypothesis to test, not an assumption; a negative result is a valid outcome.
 
-> **Status: v0.4.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
-> neurons, 467,579 connections). Dynamics, inputs and readout are placeholders, and no
-> experiment has been frozen yet. Numbers below are a first look, not a scientific claim.
+> **Status: v0.5.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Dynamics,
+> inputs and readout are placeholders, and no experiment has been frozen yet. Numbers below
+> are first looks (most of them pre-registered), not a scientific claim.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/cx-wiring-dark.png">
@@ -43,7 +44,7 @@ hemibrain v1.2 connectome ──► CX subgraph ──► frozen recurrent "rese
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/results-forest-dark.png">
-  <img alt="Forest plot: real CX wiring minus each control, four pre-registered experiments. Small edges over degree-shuffled and random wiring with frozen reservoirs (+1 to +6 points), none over wiring shuffled within cell types, and none once weights are trained." src="docs/figures/results-forest-light.png" width="100%">
+  <img alt="Forest plot: real CX wiring minus each control, five pre-registered experiments. Small edges over degree-shuffled and random wiring with frozen reservoirs (+1 to +6 points) and none over wiring shuffled within cell types; with trained weights no edge over random or degree-shuffled masks on the dense compass core, but on the sparse whole CX the real wiring beats all three controls (+1 to +4 points)." src="docs/figures/results-forest-light.png" width="100%">
 </picture>
 
 <picture>
@@ -91,7 +92,34 @@ See [docs/spike_heading.md](docs/spike_heading.md).
 Training the recurrent weights on the compass-core mask (409 neurons) makes a much better
 integrator (0.84 vs 0.52 frozen) — but a random mask of the same density trains just as well,
 and with scarce data even slightly better (−2.4 points for the real mask, pre-registered).
-See [docs/spike_trained.md](docs/spike_trained.md).
+The compass core is dense (26% of all possible connections). On the **whole CX** (5.3%), run as
+100 cloud jobs, the picture changes: the real wiring trains better than a random mask of the
+same size (**+2.8 points [+2.1, +3.6]**, the pre-registered test) and than a degree-preserving
+shuffle (+3.7). Shuffling within cell types costs only +1.1, so cell-type structure
+carries most of the advantage. One task, one model, one training budget — a lead, not a
+conclusion. See [docs/spike_trained.md](docs/spike_trained.md).
+
+## Cloud runs
+
+The whole-CX sweep (5 variants × 20 seeds) would take ~30 h on a laptop. It runs on AWS as a
+Batch array job, one container per (variant, seed):
+
+```
+git commit ──► Docker image ──► Amazon ECR ──► AWS Batch array job ──► S3 results ──► aggregate
+ (code)        micromamba,       private       Fargate Spot, 4 vCPU       one JSON     same summary
+               same conda env    registry      / 8 GB per job, ≤3 at once  per job      as local runs
+```
+
+- **Infrastructure as code** — Terraform in [infra/](infra/README.md): ECR, a private encrypted
+  S3 bucket, least-privilege IAM roles (jobs can only write results), Batch on Fargate Spot,
+  CloudWatch logs and a cost budget with alerts.
+- **Reproducible** — the image is tagged with the git commit; the container downloads the
+  public connectome and checks its SHA-256; a pilot job matched the local result exactly.
+- **Measured** — 100/100 jobs succeeded, 7.8 job-hours in 3.3 h wall time, an estimated <1 USD
+  (Fargate Spot list price; billing data pending);
+  idle cost is near zero because Fargate scales to zero.
+
+How to run it: [docs/cloud.md](docs/cloud.md).
 
 ## Quick start
 
@@ -119,7 +147,9 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_m0plus.md](docs/spike_m0plus.md) | M0+: hidden-cue task and reservoir, so topologies can be told apart |
 | [docs/spike_m1.md](docs/spike_m1.md) | M1: real hemibrain CX wiring, data download, multi-seed results |
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
-| [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core), pre-registered result |
+| [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
+| [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |
+| [infra/README.md](infra/README.md) | Terraform stack for the cloud runs |
 | [docs/reproducibility.md](docs/reproducibility.md) | Provenance capture for runs |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 
@@ -127,7 +157,8 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 
 - **M2 — honest science:** a harder task where fine wiring could matter, signed synapses, a
   frozen protocol and a one-shot holdout.
-- **M3 — cloud:** containerised multi-seed sweeps on AWS Batch (CPU) with S3 artifacts.
+- **M3 — cloud (done in v0.5.0):** containerised multi-seed sweeps on AWS Batch (CPU) with S3
+  artifacts and Terraform; next: dispatch from GitHub Actions via OIDC.
 - **M4 — write-up:** results notebook, figures, short report.
 
 ## Data and citation

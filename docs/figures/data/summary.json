@@ -80,6 +80,26 @@
           0.005
         ]
       }
+    },
+    {
+      "label": "Heading task\ntrained weights, whole CX (seeds 40–59)",
+      "diff": {
+        "ShuffledFly": [
+          0.027,
+          0.037,
+          0.047
+        ],
+        "TypeShuffledFly": [
+          0.006,
+          0.011,
+          0.017
+        ],
+        "RandomRecurrent": [
+          0.021,
+          0.028,
+          0.036
+        ]
+      }
     }
   ],
   "progression": [
