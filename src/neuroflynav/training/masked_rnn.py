@@ -91,16 +91,15 @@ class MaskedRateRNN(torch.nn.Module):
         return logits
 
 
-def train_and_score(
+def train_model(
     graph: Graph,
     train_data: tuple[FloatArray, NDArray[np.int64]],
-    test_data: tuple[FloatArray, NDArray[np.int64]],
     scored: Sequence[bool],
     num_classes: int,
     config: TrainingConfig,
     seed: int,
-) -> float:
-    """Train on ``train_data`` with a fixed budget; return accuracy on scored test steps."""
+) -> MaskedRateRNN:
+    """Train a masked RNN on ``train_data`` with a fixed budget and return it."""
     torch.manual_seed(seed)
     generator = np.random.default_rng(seed)
     inputs, labels = (torch.tensor(a) for a in train_data)
@@ -123,7 +122,29 @@ def train_and_score(
         optimizer.zero_grad()
         loss.backward()  # type: ignore[no-untyped-call]
         optimizer.step()
+    return model
+
+
+def predict(model: MaskedRateRNN, inputs: FloatArray) -> NDArray[np.int64]:
+    """Predicted class per sequence and step, shape ``(sequences, steps)``."""
     with torch.no_grad():
-        test_inputs, test_labels = (torch.tensor(a) for a in test_data)
-        predicted = model(test_inputs.float()).argmax(dim=2)[:, mask]
-        return float((predicted == test_labels[:, mask]).float().mean())
+        logits = model(torch.tensor(inputs).float())
+    predicted: NDArray[np.int64] = logits.argmax(dim=2).numpy().astype(np.int64)
+    return predicted
+
+
+def train_and_score(
+    graph: Graph,
+    train_data: tuple[FloatArray, NDArray[np.int64]],
+    test_data: tuple[FloatArray, NDArray[np.int64]],
+    scored: Sequence[bool],
+    num_classes: int,
+    config: TrainingConfig,
+    seed: int,
+) -> float:
+    """Train on ``train_data`` with a fixed budget; return accuracy on scored test steps."""
+    model = train_model(graph, train_data, scored, num_classes, config, seed)
+    mask = np.asarray(scored, dtype=bool)
+    hits = predict(model, test_data[0])[:, mask] == test_data[1][:, mask]
+    # float32 mean, as in earlier releases, so stored results reproduce exactly
+    return float(torch.tensor(hits).float().mean())

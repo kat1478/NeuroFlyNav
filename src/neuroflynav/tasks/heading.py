@@ -70,10 +70,10 @@ def heading_sector(theta: FloatArray, sectors: int) -> IntArray:
     return np.minimum(indices, sectors - 1)
 
 
-def generate_sequence(
+def generate_trajectory(
     config: HeadingTaskConfig, seed: int
-) -> tuple[FloatArray, IntArray]:
-    """Return ``(inputs, sectors)`` with shapes ``(steps, INPUT_DIM)`` and ``(steps,)``."""
+) -> tuple[FloatArray, IntArray, FloatArray]:
+    """Return ``(inputs, sectors, theta)``; ``theta`` is the true heading in radians."""
     rng = np.random.default_rng(seed)
     innovation = config.turn_std * math.sqrt(1 - config.persistence**2)
     omega = np.empty(config.steps)
@@ -89,7 +89,15 @@ def generate_sequence(
     inputs[:, 2] = visible
     inputs[:, 3] = np.where(visible, np.cos(theta), 0.0)
     inputs[:, 4] = np.where(visible, np.sin(theta), 0.0)
-    return inputs, heading_sector(theta, config.sectors)
+    return inputs, heading_sector(theta, config.sectors), theta
+
+
+def generate_sequence(
+    config: HeadingTaskConfig, seed: int
+) -> tuple[FloatArray, IntArray]:
+    """Return ``(inputs, sectors)`` with shapes ``(steps, INPUT_DIM)`` and ``(steps,)``."""
+    inputs, sectors, _ = generate_trajectory(config, seed)
+    return inputs, sectors
 
 
 def hold_last_landmark_accuracy(
