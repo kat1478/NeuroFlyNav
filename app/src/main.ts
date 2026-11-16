@@ -1,13 +1,15 @@
 import "./styles.css";
-import { leave } from "./lifecycle";
+import { Scope } from "./lifecycle";
 import { renderReplay } from "./views/replay";
 import { renderResults } from "./views/results";
 import { renderWiring } from "./views/wiring";
 
-const views: Record<string, (root: HTMLElement) => Promise<void>> = {
-  results: renderResults,
-  wiring: renderWiring,
-  replay: renderReplay,
+type Render = (root: HTMLElement, scope: Scope) => Promise<void>;
+
+const views: Record<string, { title: string; render: Render }> = {
+  results: { title: "Results", render: renderResults },
+  wiring: { title: "Wiring", render: renderWiring },
+  replay: { title: "Replay", render: renderReplay },
 };
 
 export function viewFromHash(hash: string): string {
@@ -15,19 +17,41 @@ export function viewFromHash(hash: string): string {
   return name in views ? name : "results";
 }
 
+let scope = new Scope();
+
 async function route(): Promise<void> {
   const root = document.getElementById("view");
   if (!root) return;
-  leave();
+  scope.dispose();
+  const mine = (scope = new Scope());
   const name = viewFromHash(location.hash);
+  document.title = `${views[name].title} · NeuroFlyNav`;
   document.querySelectorAll<HTMLAnchorElement>(".tabs a").forEach((link) => {
-    link.toggleAttribute("aria-current", link.dataset.view === name);
+    if (link.dataset.view === name) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
   });
-  root.replaceChildren();
+  const container = document.createElement("div");
+  const loading = Object.assign(document.createElement("p"), {
+    className: "loading",
+    textContent: "Loading…",
+  });
+  container.append(loading);
+  root.replaceChildren(container);
+  root.setAttribute("aria-busy", "true");
   try {
-    await views[name](root);
+    await views[name].render(container, mine);
   } catch (error) {
-    root.innerHTML = `<p class="error">Could not load this view: ${String(error)}</p>`;
+    if (!mine.active) return;
+    const message = document.createElement("p");
+    message.className = "error";
+    message.textContent = `Could not load this view: ${String(error)}`;
+    container.replaceChildren(message);
+  } finally {
+    if (mine.active) {
+      loading.remove();
+      root.removeAttribute("aria-busy");
+      root.focus({ preventScroll: true });
+    }
   }
 }
 

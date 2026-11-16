@@ -1,14 +1,23 @@
-/** One cleanup per active view (stop animations, observers) when the route changes. */
+/** Each rendered view gets a scope; leaving the view disposes it and runs its cleanups. */
 
-let cleanup: (() => void) | undefined;
+export class Scope {
+  private cleanups: (() => void)[] = [];
+  private disposed = false;
 
-export function onLeave(callback: () => void): void {
-  cleanup = callback;
-}
+  /** Register a cleanup; runs at once if the view was already left (stale render). */
+  onLeave(callback: () => void): void {
+    if (this.disposed) callback();
+    else this.cleanups.push(callback);
+  }
 
-export function leave(): void {
-  cleanup?.();
-  cleanup = undefined;
+  get active(): boolean {
+    return !this.disposed;
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    for (const cleanup of this.cleanups.splice(0)) cleanup();
+  }
 }
 
 /** Re-run `draw` when the element's width changes (not on height changes it causes). */
@@ -22,5 +31,8 @@ export function onWidthChange(element: HTMLElement, draw: () => void): () => voi
     frame = requestAnimationFrame(draw);
   });
   observer.observe(element);
-  return () => observer.disconnect();
+  return () => {
+    cancelAnimationFrame(frame);
+    observer.disconnect();
+  };
 }
