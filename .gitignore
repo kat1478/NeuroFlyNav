@@ -34,3 +34,7 @@ artifacts/
 !*.tfvars.example
 crash.log
 tfplan
+
+# Web app
+app/node_modules/
+app/dist/

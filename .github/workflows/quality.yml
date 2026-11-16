@@ -28,3 +28,29 @@ jobs:
       - name: Run quality gate
         run: make quality
         shell: bash -el {0}
+
+  app:
+    name: App
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash -el {0}
+        working-directory: app
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Create Node environment (conda-forge)
+        uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39
+        with:
+          environment-file: app/environment.yml
+          cache-environment: false
+
+      - name: Install locked dependencies
+        run: npm ci --no-fund --no-audit
+
+      - name: Lint, format, typecheck, test
+        run: npm run check
+
+      - name: Build
+        run: npm run build

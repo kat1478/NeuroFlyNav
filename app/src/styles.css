@@ -1,0 +1,141 @@
+/* Colours match the README figures (reporting/figures.py), light and dark. */
+:root {
+  --surface: #fcfcfb;
+  --raised: #ffffff;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --fly: #2a78d6;
+  --shuffled: #eb6834;
+  --random: #1baf7a;
+  --typeshuffled: #6250d6;
+  --accent: #2a78d6;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #1a1a19;
+    --raised: #222220;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --fly: #3987e5;
+    --shuffled: #d95926;
+    --random: #199e70;
+    --typeshuffled: #9085e9;
+    --accent: #6da7ec;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --surface: #1a1a19;
+  --raised: #222220;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --baseline: #383835;
+  --fly: #3987e5;
+  --shuffled: #d95926;
+  --random: #199e70;
+  --typeshuffled: #9085e9;
+  --accent: #6da7ec;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font:
+    16px/1.55 system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+a {
+  color: var(--accent);
+}
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid var(--grid);
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+}
+.brand-name {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+.brand-tag {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+.tabs a {
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.tabs a[aria-current] {
+  background: var(--ink);
+  color: var(--surface);
+}
+main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  outline: none;
+}
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 32px 0 4px;
+}
+.lede {
+  color: var(--ink-2);
+  max-width: 68ch;
+  margin: 0 0 16px;
+}
+.note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  max-width: 68ch;
+}
+.error {
+  color: var(--shuffled);
+}
+.site-footer {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 16px;
+  border-top: 1px solid var(--grid);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
