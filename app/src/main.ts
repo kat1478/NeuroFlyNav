@@ -1,4 +1,5 @@
 import "./styles.css";
+import { leave } from "./lifecycle";
 import { renderReplay } from "./views/replay";
 import { renderResults } from "./views/results";
 import { renderWiring } from "./views/wiring";
@@ -14,18 +15,10 @@ export function viewFromHash(hash: string): string {
   return name in views ? name : "results";
 }
 
-let cleanup: (() => void) | undefined;
-
-/** Views may register a cleanup (e.g. stop an animation) when the route changes. */
-export function onLeave(callback: () => void): void {
-  cleanup = callback;
-}
-
 async function route(): Promise<void> {
   const root = document.getElementById("view");
   if (!root) return;
-  cleanup?.();
-  cleanup = undefined;
+  leave();
   const name = viewFromHash(location.hash);
   document.querySelectorAll<HTMLAnchorElement>(".tabs a").forEach((link) => {
     link.toggleAttribute("aria-current", link.dataset.view === name);
