@@ -82,3 +82,23 @@ Reading:
   worst. A likely reason (post hoc): the real CX has strong hubs (in-degree spread 6.7× that of
   the random mask), and hub-heavy masks learn less easily here.
 - Training needs ~32 sequences to beat the frozen reservoir; with 16 it overfits.
+
+## Whole CX on AWS Batch (pre-registered, seeds 40–59)
+
+The same experiment on the whole CX subgraph (2,966 neurons, 467,579 edges, 5.3% density
+instead of 26%), run as 100 AWS Batch jobs ([cloud.md](cloud.md)): 100/100 succeeded,
+7.8 job-hours, 3.3 h wall time, well under 1 USD. Rule fixed before the run: Fly − RandomMask,
+paired over seeds, 95% CI > 0.
+
+| Variant | Accuracy | Fly − variant (paired) |
+| --- | --- | --- |
+| FlyConnectome (real mask, trained) | 0.845 [0.838, 0.852] | — |
+| TypeShuffledFly (within cell types) | 0.834 [0.826, 0.842] | +0.011 [+0.006, +0.017] |
+| RandomMask (same edge count) | 0.817 [0.808, 0.825] | +0.028 [+0.021, +0.036] |
+| ShuffledFly (degree-preserving) | 0.808 [0.797, 0.819] | +0.037 [+0.027, +0.047] |
+| FrozenFly (recurrent weights frozen) | 0.511 [0.501, 0.520] | +0.335 [+0.322, +0.347] |
+| hold-last-landmark oracle | 0.556 [0.545, 0.567] | — |
+
+On the sparse whole CX the real wiring is a better trainable scaffold than random or
+degree-shuffled wiring of the same size, unlike on the dense compass core. Most of the edge
+survives shuffling within cell types. Exploratory: one task, one model, one training budget.
