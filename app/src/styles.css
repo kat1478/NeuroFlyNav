@@ -374,3 +374,74 @@ a:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* ---------- replay view ---------- */
+.rings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 8px 0;
+}
+.ring-figure {
+  margin: 0;
+  text-align: center;
+}
+.ring {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+}
+.ring-figure figcaption {
+  display: flex;
+  flex-direction: column;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.ring-figure figcaption strong {
+  color: var(--ink);
+}
+.player {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 12px 0 8px;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+.player input[type="range"] {
+  flex: 1 1 200px;
+  accent-color: var(--accent);
+}
+.player select {
+  padding: 4px 8px;
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.play {
+  min-width: 92px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font: inherit;
+  cursor: pointer;
+}
+.step-label {
+  min-width: 15em;
+  font-variant-numeric: tabular-nums;
+}
+.timeline-slot {
+  overflow-x: auto;
+}
+.timeline {
+  display: block;
+  min-width: 680px;
+  width: 100%;
+  height: auto;
+}
