@@ -1,6 +1,6 @@
 import * as Plot from "@observablehq/plot";
 import { loadResults, type Control, type PerSeedExperiment, type Results } from "../data";
-import { onLeave, onWidthChange } from "../lifecycle";
+import { onWidthChange, type Scope } from "../lifecycle";
 import {
   onScheme,
   palette,
@@ -45,10 +45,11 @@ function headline(results: Results): HTMLElement {
     el(
       "div",
       { className: "hero-number" },
-      el("span", { className: "hero-value", text: `${points(mean)} pts` }),
+      el("span", { className: "hero-value", text: points(mean) }),
+      el("span", { className: "hero-unit", text: "percentage points of heading accuracy" }),
       el("span", {
         className: "hero-ci",
-        text: `95% CI ${points(low)} to ${points(high)}`,
+        text: `95% confidence interval ${points(low)} to ${points(high)}`,
       }),
     ),
     el(
@@ -56,14 +57,18 @@ function headline(results: Results): HTMLElement {
       { className: "hero-text" },
       "Recurrent weights trained on the ",
       el("strong", { text: "real wiring of the whole fly central complex" }),
-      " (2,966 neurons) track heading better than the same network trained on a random wiring " +
-        "of the same size — the pre-registered test, 20 fresh seeds, 100 cloud jobs. " +
-        "On the small, dense compass core there was no such edge.",
+      " (2,966 neurons) keep track of heading better than the same network trained on a random " +
+        "wiring with the same number of connections. The test was fixed in writing before it ran " +
+        "(pre-registered) and repeated with 20 independent random starts (seeds), as 100 jobs in " +
+        "the cloud. On the small, dense compass core there was no such edge.",
     ),
   );
 }
 
 /* ---------- forest plot ---------- */
+
+/** Row label without the seed range (kept in tooltips and tables). */
+const shortLabel = (label: string): string => label.replace(/ \(seeds [^)]*\)/, "");
 
 interface ForestPoint {
   row: string;
@@ -98,16 +103,21 @@ function forestData(results: Results): ForestPoint[] {
 
 function forestChart(data: ForestPoint[], rows: string[], p: Palette, width: number): Element {
   const narrow = width < 560;
-  const label = (i: number): string => rows[i]?.replace("\n", narrow ? " · " : "\n") ?? "";
+  const headline = rows.length - 1;
+  const label = (i: number): string =>
+    (i === headline ? "★ " : "") +
+    (shortLabel(rows[i] ?? "").replace("\n", narrow ? " · " : "\n") || "");
   return Plot.plot({
     ...axisStyle(p),
     width,
-    height: rows.length * (narrow ? 96 : 78) + 60,
-    marginLeft: narrow ? 8 : 290,
+    height: rows.length * (narrow ? 96 : 78) + 76,
+    marginLeft: narrow ? 8 : 250,
     marginRight: 16,
+    marginBottom: 48,
     x: {
       label: "Real wiring minus control (percentage points) →",
       labelAnchor: "center",
+      labelOffset: 40,
       inset: 8,
     },
     y: {
@@ -119,6 +129,12 @@ function forestChart(data: ForestPoint[], rows: string[], p: Palette, width: num
       axis: narrow ? null : "left",
     },
     marks: [
+      Plot.rect([headline], {
+        y1: (i: number) => i - 0.46,
+        y2: (i: number) => i + 0.46,
+        fill: p.grid,
+        fillOpacity: 0.55,
+      }),
       Plot.gridX({ stroke: p.grid, strokeOpacity: 1 }),
       Plot.ruleX([0], { stroke: p.ink2 }),
       Plot.link(data, {
@@ -210,9 +226,11 @@ function seedChart(data: SeedPoint[], p: Palette, width: number): Element {
     marginLeft: narrow ? 8 : 200,
     marginRight: 16,
     marginTop: narrow ? 24 : 8,
+    marginBottom: 48,
     x: {
       label: "Real wiring minus control, per seed (percentage points) →",
       labelAnchor: "center",
+      labelOffset: 40,
       inset: 14,
     },
     y: { axis: null },
@@ -277,6 +295,12 @@ const CURVE_SERIES: Series[] = [
   "FrozenFly",
 ];
 
+/** The real wiring is drawn last (on top): its line nearly coincides with the shuffled one. */
+const DRAW_ORDER: Series[] = [
+  ...CURVE_SERIES.filter((s) => s !== "FlyConnectome"),
+  "FlyConnectome",
+];
+
 interface CurvePoint {
   series: Series;
   size: number;
@@ -304,15 +328,17 @@ function curveChart(data: CurvePoint[], p: Palette, width: number): Element {
   return Plot.plot({
     ...axisStyle(p),
     width,
-    height: 340,
+    height: 360,
     marginLeft: 48,
     marginRight: 16,
+    marginBottom: 48,
     x: {
       type: "log",
       ticks: sizes,
       tickFormat: (d: number) => String(d),
-      label: "Training sequences →",
+      label: "Training sequences (log scale) →",
       labelAnchor: "center",
+      labelOffset: 40,
     },
     y: {
       domain: [0.3, 0.9],
@@ -322,19 +348,19 @@ function curveChart(data: CurvePoint[], p: Palette, width: number): Element {
     },
     marks: [
       Plot.gridY({ stroke: p.grid, strokeOpacity: 1 }),
-      ...CURVE_SERIES.map((s) =>
+      ...DRAW_ORDER.map((s) =>
         Plot.line(
           data.filter((d) => d.series === s),
           {
             x: "size",
             y: "accuracy",
             stroke: p.series[s],
-            strokeWidth: 2,
+            strokeWidth: s === "FlyConnectome" ? 3 : 2,
             strokeDasharray: s === "FrozenFly" ? "4 4" : undefined,
           },
         ),
       ),
-      ...CURVE_SERIES.map((s) =>
+      ...DRAW_ORDER.map((s) =>
         Plot.dot(
           data.filter((d) => d.series === s),
           {
@@ -355,7 +381,6 @@ function curveChart(data: CurvePoint[], p: Palette, width: number): Element {
           x: "size",
           y: 0.9,
           title: (d: { size: number; text: string }) => `${d.size} training sequences\n${d.text}`,
-          anchor: "top-left",
           ...tipStyle(p),
         }),
       ),
@@ -365,8 +390,9 @@ function curveChart(data: CurvePoint[], p: Palette, width: number): Element {
 
 /* ---------- view ---------- */
 
-export async function renderResults(root: HTMLElement): Promise<void> {
+export async function renderResults(root: HTMLElement, scope: Scope): Promise<void> {
   const results = await loadResults();
+  if (!scope.active) return;
   root.append(
     el("h1", { text: "Does real fly wiring make a better network?" }),
     el("p", {
@@ -383,8 +409,11 @@ export async function renderResults(root: HTMLElement): Promise<void> {
   const rows = results.forest.map((r) => r.label);
   const forest = card(
     "All pre-registered comparisons",
-    "Points: mean paired difference over 20 seeds; bars: 95% confidence interval. " +
-      "Right of zero = real wiring better. Hover a point for numbers.",
+    "Each row is one experiment; each mark compares the real wiring with one control. Points: " +
+      "average difference over 20 seeds; bars: 95% confidence interval. Right of zero = real " +
+      "wiring better. ★ marks the headline result above. The hidden-cue grid task asks the agent " +
+      "to reach a goal it saw only briefly; the heading task asks it to keep track of where it " +
+      "faces. Hover or tap a mark for numbers and seeds.",
   );
   const forestPoints = forestData(results);
   forest.tableSlot.append(
@@ -407,19 +436,29 @@ export async function renderResults(root: HTMLElement): Promise<void> {
   const seeds = card(
     "Seed by seed",
     "Each mark is one seed: how much better (right) or worse (left) the real wiring did than " +
-      "that control on the same seed. The black tick is the mean.",
+      "that control on the same seed. The thick vertical tick is the average.",
   );
   const picker = el("div", { className: "segmented", text: "" });
   picker.setAttribute("role", "group");
   picker.setAttribute("aria-label", "Experiment");
   seeds.root.insertBefore(picker, seeds.legend);
   let selected = results.per_seed[results.per_seed.length - 1].id;
+  const pickerButtons = results.per_seed.map((e) => {
+    const button = el("button", { text: e.label.replace("Heading task, ", "") });
+    button.type = "button";
+    button.addEventListener("click", () => {
+      selected = e.id;
+      drawSeeds(palette());
+    });
+    picker.append(button);
+    return { id: e.id, button };
+  });
 
   const curve = card(
     "How much data does each wiring need?",
     "Trained compass core (409 neurons): accuracy against the number of training sequences. " +
-      "Sizes 16–64: seeds 20–39; 256: seeds 0–19. The frozen network does not learn its " +
-      "recurrent weights.",
+      "The dashed line is the real wiring with its connections frozen (not trained). With little " +
+      "data the random wiring is slightly ahead; with 256 sequences all trained networks converge.",
   );
   const curvePoints = curveData(results);
   curve.tableSlot.append(
@@ -444,18 +483,9 @@ export async function renderResults(root: HTMLElement): Promise<void> {
 
   const drawSeeds = (p: Palette): void => {
     const experiment = results.per_seed.find((e) => e.id === selected) ?? results.per_seed[0];
-    picker.replaceChildren(
-      ...results.per_seed.map((e) => {
-        const button = el("button", { text: e.label.replace("Heading task, ", "") });
-        button.type = "button";
-        button.setAttribute("aria-pressed", String(e.id === selected));
-        button.addEventListener("click", () => {
-          selected = e.id;
-          drawSeeds(palette());
-        });
-        return button;
-      }),
-    );
+    for (const { id, button } of pickerButtons) {
+      button.setAttribute("aria-pressed", String(id === selected));
+    }
     const data = seedData(experiment);
     seeds.chart.replaceChildren(seedChart(data, p, seeds.chart.clientWidth || 800));
     seeds.tableSlot.replaceChildren(
@@ -463,9 +493,9 @@ export async function renderResults(root: HTMLElement): Promise<void> {
         data,
         [
           { label: "Seed", value: (d) => String(d.seed), numeric: true },
-          { label: "Control", value: (d) => CONTROL_NAME[d.control] },
-          { label: "Real wiring", value: (d) => pct(d.fly), numeric: true },
-          { label: "Control", value: (d) => pct(d.other), numeric: true },
+          { label: "Compared with", value: (d) => CONTROL_NAME[d.control] },
+          { label: "Real wiring accuracy", value: (d) => pct(d.fly), numeric: true },
+          { label: "Control accuracy", value: (d) => pct(d.other), numeric: true },
           { label: "Difference (pts)", value: (d) => points(d.diff / 100), numeric: true },
         ],
         experiment.label,
@@ -487,7 +517,7 @@ export async function renderResults(root: HTMLElement): Promise<void> {
 
   const stopScheme = onScheme(draw);
   const stopResize = onWidthChange(root, draw);
-  onLeave(() => {
+  scope.onLeave(() => {
     stopScheme();
     stopResize();
   });

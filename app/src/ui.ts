@@ -40,6 +40,8 @@ export function table<T>(rows: T[], columns: Column<T>[], caption: string): HTML
   );
 }
 
+let tableCount = 0;
+
 /** A chart card: title, short explanation, chart slot and a "show table" toggle. */
 export function card(
   title: string,
@@ -49,9 +51,11 @@ export function card(
   const legend = el("div", { className: "legend" });
   const tableSlot = el("div", { className: "table-slot" });
   tableSlot.hidden = true;
+  tableSlot.id = `table-${++tableCount}`;
   const toggle = el("button", { className: "link-button", text: "Show table" });
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-controls", tableSlot.id);
   toggle.addEventListener("click", () => {
     tableSlot.hidden = !tableSlot.hidden;
     toggle.textContent = tableSlot.hidden ? "Show table" : "Hide table";

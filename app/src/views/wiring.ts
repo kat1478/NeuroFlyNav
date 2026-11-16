@@ -1,7 +1,16 @@
 import * as Plot from "@observablehq/plot";
 import { loadWiring, type Wiring } from "../data";
-import { cellValue, FAMILY_INFO, topPartners, type Mode, type Partner } from "../families";
-import { onLeave, onWidthChange } from "../lifecycle";
+import {
+  cellValue,
+  FAMILY_GROUPS,
+  FAMILY_INFO,
+  familyName,
+  REGIONS,
+  topPartners,
+  type Mode,
+  type Partner,
+} from "../families";
+import { onWidthChange, type Scope } from "../lifecycle";
 import { onScheme, palette, type Palette } from "../theme";
 import { card, el, pct, table } from "../ui";
 
@@ -46,8 +55,8 @@ function heatmap(
   return Plot.plot({
     width: size,
     height: size,
-    marginLeft: 44,
-    marginTop: size < 560 ? 64 : 44,
+    marginLeft: 64,
+    marginTop: size < 560 ? 84 : 64,
     marginBottom: 8,
     marginRight: 8,
     padding: 0.06,
@@ -55,11 +64,19 @@ function heatmap(
     x: {
       domain: wiring.labels,
       axis: "top",
-      label: null,
+      label: "to (receives) →",
+      labelAnchor: "center",
+      labelOffset: size < 560 ? 64 : 40,
       tickSize: 0,
       tickRotate: size < 560 ? -90 : 0,
     },
-    y: { domain: wiring.labels, label: null, tickSize: 0 },
+    y: {
+      domain: wiring.labels,
+      label: "↓ from (sends)",
+      labelAnchor: "center",
+      labelOffset: 50,
+      tickSize: 0,
+    },
     color: {
       type: "log",
       domain: [Math.min(...values), Math.max(...values)],
@@ -81,6 +98,11 @@ function heatmap(
         strokeWidth: 0.5,
       }),
       Plot.cell(nonzero, { x: "target", y: "source", fill: value }),
+      // No synapses at all: a small dot, so "none" never looks like the lowest colour.
+      Plot.dot(
+        data.filter((d) => d.synapses === 0),
+        { x: "target", y: "source", r: 1.6, fill: p.muted },
+      ),
       Plot.cell(
         data.filter((d) => d.source === label),
         { x: "target", y: "source", fill: "none", stroke: p.ink, strokeWidth: 1.5 },
@@ -91,7 +113,9 @@ function heatmap(
           x: "target",
           y: "source",
           title: (d: Cell) =>
-            `${fmt(d.synapses)} synapses\n${d.source} → ${d.target}\n` +
+            `${fmt(d.synapses)} synapses\n` +
+            `from ${d.source} · ${familyName(d.source)}\n` +
+            `to ${d.target} · ${familyName(d.target)}\n` +
             `${pct(d.share)} of ${d.source}'s output in the CX`,
           fill: p.raised,
           stroke: p.grid,
@@ -110,12 +134,14 @@ function partnerList(title: string, partners: Partner[]): HTMLElement[] {
       "ul",
       { className: "partners" },
       ...partners.map((partner) => {
+        const name = el("abbr", { text: partner.family });
+        name.title = familyName(partner.family);
         const bar = el("span", { className: "partner-bar" });
         bar.style.width = `${Math.max(4, (100 * partner.share) / top)}%`;
         return el(
           "li",
           {},
-          el("span", { text: partner.family }),
+          name,
           el("span", {}, bar),
           el("span", { className: "num", text: pct(partner.share, 0) }),
         );
@@ -148,13 +174,60 @@ function familyCard(wiring: Wiring, index: number): HTMLElement {
       stat(fmt(out), "synapses out"),
       stat(fmt(into), "synapses in"),
     ),
-    ...partnerList("Strongest targets", topPartners(wiring.labels, wiring.matrix, index, "out")),
-    ...partnerList("Strongest sources", topPartners(wiring.labels, wiring.matrix, index, "in")),
+    ...partnerList(
+      "Sends most to (share of its output)",
+      topPartners(wiring.labels, wiring.matrix, index, "out"),
+    ),
+    ...partnerList(
+      "Hears most from (share of its input)",
+      topPartners(wiring.labels, wiring.matrix, index, "in"),
+    ),
   );
 }
 
-export async function renderWiring(root: HTMLElement): Promise<void> {
+function glossary(): HTMLElement {
+  const regions = el(
+    "dl",
+    { className: "regions" },
+    ...REGIONS.flatMap(([term, text]) => [el("dt", { text: term }), el("dd", { text })]),
+  );
+  const groups = FAMILY_GROUPS.map((group) =>
+    el(
+      "div",
+      { className: "glossary-group" },
+      el("h4", { text: group.title }),
+      el(
+        "dl",
+        {},
+        ...group.families.flatMap((label) => [
+          el("dt", {}, el("strong", { text: label }), ` — ${familyName(label)}`),
+          el("dd", { text: FAMILY_INFO[label]?.role ?? "" }),
+        ]),
+      ),
+    ),
+  );
+  return el(
+    "details",
+    { className: "glossary" },
+    el("summary", {
+      text: "What do the abbreviations mean? (cell-type families and brain regions)",
+    }),
+    el(
+      "p",
+      { className: "note" },
+      "Neuroscientists name these neurons after the regions they connect: P-EN, for example, " +
+        "runs from the protocerebral bridge (P) to the ellipsoid body (E) and the noduli (N). " +
+        "Δ (delta) types are local interneurons. Many roles are still hypotheses.",
+    ),
+    el("h4", { text: "Brain regions" }),
+    regions,
+    ...groups,
+  );
+}
+
+export async function renderWiring(root: HTMLElement, scope: Scope): Promise<void> {
   const wiring = await loadWiring();
+  if (!scope.active) return;
   const data = cells(wiring);
   let mode: Mode = "synapses";
   let selected = wiring.labels.indexOf("EPG");
@@ -172,9 +245,10 @@ export async function renderWiring(root: HTMLElement): Promise<void> {
 
   const view = card(
     "Who talks to whom",
-    "Rows send, columns receive: each cell counts synapses from the row family to the " +
-      "column family; darker = more. " +
-      "Hover a cell for numbers; click it (or pick a family below) to read about the row family.",
+    "Rows send, columns receive: each cell counts synapses from the row family to the column " +
+      "family. Stronger colour = more synapses (see the scale); a small dot = none. Hover or tap " +
+      "a cell for numbers; click it, or pick a family, to read about the sending family. The " +
+      "abbreviations are explained below the chart.",
   );
   const picker = el("select");
   picker.setAttribute("aria-label", "Family");
@@ -186,6 +260,21 @@ export async function renderWiring(root: HTMLElement): Promise<void> {
   const modeSwitch = el("div", { className: "segmented" });
   modeSwitch.setAttribute("role", "group");
   modeSwitch.setAttribute("aria-label", "Colour by");
+  const modeButtons = (
+    [
+      ["synapses", "synapse count"],
+      ["share", "share of output"],
+    ] as [Mode, string][]
+  ).map(([value, text]) => {
+    const button = el("button", { text });
+    button.type = "button";
+    button.addEventListener("click", () => {
+      mode = value;
+      draw();
+    });
+    modeSwitch.append(button);
+    return { value, button };
+  });
   const controls = el(
     "div",
     { className: "controls" },
@@ -195,7 +284,7 @@ export async function renderWiring(root: HTMLElement): Promise<void> {
   );
   const side = el("div");
   const layout = el("div", { className: "wiring-layout" }, view.chart, side);
-  view.legend.replaceWith(controls, layout); // the chart now lives inside the layout
+  view.legend.replaceWith(controls, layout, glossary()); // the chart now lives inside the layout
   view.tableSlot.append(
     table(
       data.filter((d) => d.synapses > 0).sort((a, b) => b.synapses - a.synapses),
@@ -222,23 +311,9 @@ export async function renderWiring(root: HTMLElement): Promise<void> {
   const draw = (): void => {
     const p = palette();
     picker.value = String(selected);
-    modeSwitch.replaceChildren(
-      ...(
-        [
-          ["synapses", "synapse count"],
-          ["share", "share of output"],
-        ] as [Mode, string][]
-      ).map(([value, text]) => {
-        const button = el("button", { text });
-        button.type = "button";
-        button.setAttribute("aria-pressed", String(mode === value));
-        button.addEventListener("click", () => {
-          mode = value;
-          draw();
-        });
-        return button;
-      }),
-    );
+    for (const { value, button } of modeButtons) {
+      button.setAttribute("aria-pressed", String(mode === value));
+    }
     const width = layout.clientWidth > 860 ? layout.clientWidth - 320 : layout.clientWidth;
     const plot = heatmap(wiring, data, mode, selected, p, width || 640);
     plot.addEventListener("click", () => {
@@ -246,6 +321,8 @@ export async function renderWiring(root: HTMLElement): Promise<void> {
       if (cell) {
         selected = cell.si;
         draw();
+        if (layout.clientWidth <= 860)
+          side.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
     });
     view.chart.replaceChildren(plot);
@@ -258,7 +335,7 @@ export async function renderWiring(root: HTMLElement): Promise<void> {
   });
   const stopScheme = onScheme(draw);
   const stopResize = onWidthChange(root, draw);
-  onLeave(() => {
+  scope.onLeave(() => {
     stopScheme();
     stopResize();
   });

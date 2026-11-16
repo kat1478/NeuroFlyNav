@@ -52,10 +52,20 @@ export interface Replay {
   variants: Record<"FlyConnectome" | "RandomMask", ReplayVariant>;
 }
 
-async function load<T>(name: string): Promise<T> {
-  const response = await fetch(`${import.meta.env.BASE_URL}data/${name}.json`);
-  if (!response.ok) throw new Error(`could not load ${name}.json (${response.status})`);
-  return (await response.json()) as T;
+const cache = new Map<string, Promise<unknown>>();
+
+/** Fetch a data file once; later calls reuse the same promise (a failed fetch is retried). */
+function load<T>(name: string): Promise<T> {
+  let promise = cache.get(name) as Promise<T> | undefined;
+  if (!promise) {
+    promise = fetch(`${import.meta.env.BASE_URL}data/${name}.json`).then(async (response) => {
+      if (!response.ok) throw new Error(`could not load ${name}.json (${response.status})`);
+      return (await response.json()) as T;
+    });
+    promise.catch(() => cache.delete(name));
+    cache.set(name, promise);
+  }
+  return promise;
 }
 
 export const loadResults = (): Promise<Results> => load<Results>("results");

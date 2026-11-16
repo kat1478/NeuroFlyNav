@@ -79,6 +79,32 @@ export const FAMILY_INFO: Record<string, { name: string; role: string }> = {
   },
 };
 
+/** Families grouped by where they sit in the circuit, for the glossary. */
+export const FAMILY_GROUPS: { title: string; families: string[] }[] = [
+  { title: "Inputs to the compass (ellipsoid body)", families: ["ER", "ExR"] },
+  { title: "Heading compass", families: ["EPG", "PEN", "PEG", "Δ7"] },
+  { title: "Towards motor output", families: ["EL", "PFL"] },
+  {
+    title: "Fan-shaped body (context, goals, vectors)",
+    families: ["PFN", "PFG", "PFR", "hΔ", "vΔ", "FC", "FS", "FR", "FB", "SA"],
+  },
+  { title: "Everything else", families: ["other"] },
+];
+
+/** Brain regions named in the family descriptions. */
+export const REGIONS: [string, string][] = [
+  ["Central complex (CX)", "a set of midline brain regions that insects use for navigation"],
+  ["Ellipsoid body (EB)", "a ring-shaped region where the heading 'compass' lives"],
+  ["Protocerebral bridge (PB)", "a handlebar-shaped region; a second map of heading"],
+  ["Fan-shaped body (FB)", "a layered region that combines heading with context and goals"],
+  [
+    "Gall, round body, lateral accessory lobe",
+    "nearby regions linking the CX to the rest of the brain and to motor control",
+  ],
+];
+
+export const familyName = (label: string): string => FAMILY_INFO[label]?.name ?? label;
+
 export type Mode = "synapses" | "share";
 
 export interface Partner {
