@@ -13,3 +13,15 @@ output "job_queue" {
 output "job_definition" {
   value = aws_batch_job_definition.trained.name
 }
+
+output "site_bucket" {
+  value = aws_s3_bucket.site.bucket
+}
+
+output "site_distribution_id" {
+  value = aws_cloudfront_distribution.site.id
+}
+
+output "site_url" {
+  value = "https://${aws_cloudfront_distribution.site.domain_name}"
+}

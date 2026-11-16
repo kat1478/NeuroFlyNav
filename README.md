@@ -17,6 +17,10 @@ topology is a hypothesis to test, not an assumption; a negative result is a vali
 > inputs and readout are placeholders, and no experiment has been frozen yet. Numbers below
 > are first looks (most of them pre-registered), not a scientific claim.
 
+**Explore the results interactively: [kat1478.github.io/NeuroFlyNav](https://kat1478.github.io/NeuroFlyNav/)**
+— every pre-registered comparison seed by seed, the central-complex wiring with a glossary of its
+cell types, and a step-by-step replay of a network keeping track of heading.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/cx-wiring-dark.png">
   <img alt="Heatmap of synapse counts between cell-type families of the fly central complex; dense blocks within the compass (ER, EPG, PEN, Δ7) and within the fan-shaped body (PFN, hΔ, vΔ, FC, FB)." src="docs/figures/cx-wiring-light.png" width="100%">
@@ -149,6 +153,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
 | [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |
+| [docs/app.md](docs/app.md) | The interactive web app: data export, development, deployment |
 | [infra/README.md](infra/README.md) | Terraform stack for the cloud runs |
 | [docs/reproducibility.md](docs/reproducibility.md) | Provenance capture for runs |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
@@ -159,7 +164,8 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
   frozen protocol and a one-shot holdout.
 - **M3 — cloud (done in v0.5.0):** containerised multi-seed sweeps on AWS Batch (CPU) with S3
   artifacts and Terraform; next: dispatch from GitHub Actions via OIDC.
-- **M4 — write-up:** results notebook, figures, short report.
+- **M4 — write-up:** interactive results explorer (started: web app on GitHub Pages and
+  CloudFront), results notebook, short report.
 
 ## Data and citation
 
