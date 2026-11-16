@@ -23,6 +23,17 @@ sequences, scored on 64 held-out sequences.
 PYTHONPATH=src python -m neuroflynav.experiments.run_trained --core --seeds 20
 ```
 
+The same experiment can run as independent (variant, seed) jobs, for example one cloud
+array task each, and be merged afterwards. The merged summary is identical to the
+sequential run because every job seeds its own data, mask and training:
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_trained --core \
+    --variant ShuffledFly --seed 4 --output results/trained/jobs/ShuffledFly-4.json
+PYTHONPATH=src python -m neuroflynav.experiments.aggregate_trained results/trained/jobs \
+    --output results/trained/run.json
+```
+
 ## Pre-registered result (seeds 0–19)
 
 | Variant | Accuracy | Fly − variant (paired) |
@@ -42,3 +53,52 @@ Reading:
   matched against the other controls.
 - The core is dense (26%), so the mask barely constrains learning. Next: a low-data regime and
   the sparse whole CX (5%), where a structural prior has a chance to matter.
+
+## Low-data regime (pre-registered, seeds 20–39)
+
+Same model and budget; only the number of training sequences changes (16, 32, 64). The plan fixed
+one primary test before the run: FlyConnectome − RandomMask averaged over the three sizes.
+
+```bash
+PYTHONPATH=src python -m neuroflynav.experiments.run_trained --core --train 32 --first-seed 20 --seeds 20
+```
+
+| Training sequences | FlyConnectome | RandomMask | ShuffledFly | TypeShuffledFly | FrozenFly |
+| --- | --- | --- | --- | --- | --- |
+| 16 | 0.371 | 0.392 | 0.380 | 0.367 | 0.450 |
+| 32 | 0.570 | 0.605 | 0.578 | 0.551 | 0.520 |
+| 64 | 0.762 | 0.780 | 0.763 | 0.744 | 0.496 |
+
+| Paired difference, pooled over sizes | Accuracy |
+| --- | --- |
+| **FlyConnectome − RandomMask (primary)** | **−0.024 [−0.029, −0.020]** |
+| FlyConnectome − ShuffledFly | −0.006 [−0.010, −0.002] |
+| FlyConnectome − TypeShuffledFly | +0.014 [+0.010, +0.018] |
+
+Reading:
+- With little data the real mask is a slightly **worse** scaffold than an even random mask — the
+  opposite of the hoped-for inductive bias.
+- The degree-preserving shuffle is almost as good as the real mask; the cell-type shuffle is the
+  worst. A likely reason (post hoc): the real CX has strong hubs (in-degree spread 6.7× that of
+  the random mask), and hub-heavy masks learn less easily here.
+- Training needs ~32 sequences to beat the frozen reservoir; with 16 it overfits.
+
+## Whole CX on AWS Batch (pre-registered, seeds 40–59)
+
+The same experiment on the whole CX subgraph (2,966 neurons, 467,579 edges, 5.3% density
+instead of 26%), run as 100 AWS Batch jobs ([cloud.md](cloud.md)): 100/100 succeeded,
+7.8 job-hours, 3.3 h wall time, an estimated <1 USD (billing data pending). Rule fixed before the run: Fly − RandomMask,
+paired over seeds, 95% CI > 0.
+
+| Variant | Accuracy | Fly − variant (paired) |
+| --- | --- | --- |
+| FlyConnectome (real mask, trained) | 0.845 [0.838, 0.852] | — |
+| TypeShuffledFly (within cell types) | 0.834 [0.826, 0.842] | +0.011 [+0.006, +0.017] |
+| RandomMask (same edge count) | 0.817 [0.808, 0.825] | +0.028 [+0.021, +0.036] |
+| ShuffledFly (degree-preserving) | 0.808 [0.797, 0.819] | +0.037 [+0.027, +0.047] |
+| FrozenFly (recurrent weights frozen) | 0.511 [0.501, 0.520] | +0.335 [+0.322, +0.347] |
+| hold-last-landmark oracle | 0.556 [0.545, 0.567] | — |
+
+On the sparse whole CX the real wiring is a better trainable scaffold than random or
+degree-shuffled wiring of the same size, unlike on the dense compass core. Most of the edge
+survives shuffling within cell types. Exploratory: one task, one model, one training budget.

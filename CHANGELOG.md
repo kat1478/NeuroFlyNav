@@ -3,6 +3,34 @@
 All notable changes to this project are documented here. Versions follow
 [Semantic Versioning](https://semver.org/); 0.x releases are exploratory.
 
+## [Unreleased]
+
+## [0.5.0] — 2026-11-16
+
+Cloud (M3): the trained-mask experiment runs as containerised AWS Batch sweeps defined in
+Terraform. The first cloud run — the whole CX, too slow for a laptop — gives the first result
+where the real wiring beats every control.
+
+### Added
+- Per-job CLI: `run_trained --variant --seed` or `--array-index` runs one (variant, seed);
+  `aggregate_trained` merges per-job JSON files into the usual summary (identical output).
+- Container (`Dockerfile`, `docker/entrypoint.sh`): digest-pinned micromamba base, same conda
+  environment, non-root; downloads the hemibrain export and checks its SHA-256; uploads the
+  result to S3. Docs: `docs/cloud.md`.
+- Terraform stack (`infra/`): ECR, private encrypted S3 bucket, least-privilege IAM roles,
+  AWS Batch on Fargate Spot, CloudWatch logs, cost budget with alerts.
+- Low-data regime for the trained compass core (16 / 32 / 64 training sequences), pre-registered:
+  the real mask trains slightly worse than a random mask of the same density (pooled −0.024).
+- README: whole-CX result in the forest plot, "Cloud runs" section.
+
+### Results (pre-registered, log1p)
+- Whole CX (2,966 neurons, 5.3% density), trained masks, seeds 40–59, 100 AWS Batch jobs:
+  FlyConnectome 0.845; Fly − RandomMask **+0.028 [+0.021, +0.036]**, Fly − ShuffledFly +0.037,
+  Fly − TypeShuffledFly +0.011. Unlike the dense compass core, the real wiring trains better.
+
+### Fixed
+- Training batch is capped at the number of training sequences.
+
 ## [0.4.0] — 2026-10-25
 
 Learning dynamics: leaky (slower) dynamics make the network integrate self-motion, and training
