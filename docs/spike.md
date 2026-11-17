@@ -44,7 +44,7 @@ PYTHONPATH=src python -m neuroflynav.experiments.run_spike --episodes 20 --seed 
 ```
 
 This prints a JSON summary with the same episode seeds and one result per policy. The output below
-is from that exact command/environment on this branch; it is an execution example, not an
+is from that exact command/environment at the time of M0 (v0.1.0); it is an execution example, not an
 interpreted result:
 
 ```json
@@ -66,8 +66,8 @@ runs the same checks as the rest of the repository (pytest, `ruff format --check
 
 ## Next steps (not part of this M0 slice)
 
-1. At **M1**, resolve the exact approved source files and license conditions before any authorized
-   real-data access; then build a source-dependent loader behind the same
+1. At **M1** (done in v0.1.0), resolve the exact source files and licence conditions before using
+   real data; then build a source-dependent loader behind the same
    `GraphLoader` protocol — ideally the only module that changes.
 2. At later milestones, decide and freeze scientific topology, dynamics, sign, controls and metrics
    before any formal experiment.

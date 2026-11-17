@@ -4,7 +4,7 @@ This module defines a minimal directed, weighted graph and a loader protocol so 
 synthetic graph (M0) and a real connectome subgraph (M1 onward) can be used
 interchangeably. Nothing here encodes a biological claim: edge weights, synaptic
 signs and dynamics are deliberately out of scope for the spike and remain open
-scientific decisions (see ops DECISIONS D-026).
+scientific decisions.
 """
 
 from __future__ import annotations

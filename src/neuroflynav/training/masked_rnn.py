@@ -1,11 +1,11 @@
-"""Leaky rate RNN whose recurrent weights live only on a graph's edges (exploratory, TASK-014).
+"""Leaky rate RNN whose recurrent weights live only on a graph's edges (exploratory).
 
 The graph is a fixed *mask*: only existing edges carry a weight, and each weight (strength
 and sign) is a free parameter learned by backpropagation through time. Initial weights are
 the graph's edge weights scaled to a target spectral radius, so an untrained model equals the
 leaky reservoir used so far. Input weights into the sensory nodes and a linear readout are
-learned too. This is camp A of the TASK-013 sign proposal: topology fixed, effective values
-learned — the learned signs are not biological evidence.
+learned too. Topology is fixed and the effective values (including signs) are learned, so the
+learned signs are not biological evidence.
 """
 
 from __future__ import annotations

@@ -6,7 +6,7 @@ wiring, and only a linear readout over the full reservoir state is trained (else
 by ridge regression). This mirrors the project's intended shape — frozen connectome
 topology, trained heads — and lets topology affect what the readout can decode, so
 controls can discriminate. Dynamics (tanh), micro-steps and scaling are M0+
-placeholders, NOT the frozen scientific choices of TASK-013/014 (see D-026).
+placeholders, not final scientific choices.
 """
 
 from __future__ import annotations
@@ -115,7 +115,7 @@ class ReservoirCore:
         The linear readout is trained over the whole reservoir state (standard
         echo-state practice), so a topology with better memory can carry the hidden
         cue forward. A biologically-constrained motor-only readout is a later
-        decision (TASK-013/014), not an M0+ choice.
+        modelling decision for later, not an M0+ choice.
         """
         drive: FloatArray = self._input @ features
         state = self._state

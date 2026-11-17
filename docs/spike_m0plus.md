@@ -23,7 +23,7 @@ show up and so the training/evaluation/metrics code is ready to reuse at M2.
   evolves through the fixed wiring; only a small linear readout is trained. This mirrors the project's
   intended shape (frozen connectome topology, trained heads). The readout reads the whole reservoir
   state (standard echo-state practice); a biologically-constrained motor-only readout is a later
-  decision (TASK-013/014), not an M0+ choice.
+  modelling decision for later, not an M0+ choice.
 - **Closed-form imitation training** (`neuroflynav.training.imitation`): a privileged greedy expert
   produces demonstrations; the readout is fit by ridge regression. No gradient loop, fully reproducible.
 - **Controls that can discriminate** (`neuroflynav.experiments.run_m0plus`): `FlyConnectome` (the
@@ -66,7 +66,7 @@ adds one dependency, `numpy` (conda-forge), recorded in `environment.yml`.
 
 ## Next steps (not part of M0+)
 
-1. **M1:** replace the synthetic graph with a real CX subgraph loader behind the same `GraphLoader`
-   protocol, only after D-034 preconditions (exact file identity + license) are met.
+1. **M1 (done in v0.1.0):** replace the synthetic graph with a real CX subgraph loader behind the same
+   `GraphLoader` protocol, once the exact file identity and licence are confirmed.
 2. **M2:** freeze the scientific task, representation, signs/dynamics, controls, metrics and protocol;
    this spike's trainer/evaluator/metrics are the reusable starting point.

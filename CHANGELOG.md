@@ -30,7 +30,7 @@ pre-registered test finds **no homing advantage** of the real wiring over a rand
 - Independent science review (re-aggregated 100 jobs) and UI/UX audit of the City view; all
   findings fixed.
 
- — 2026-11-16
+## [0.6.0] — 2026-11-16
 
 Interactive results explorer (start of M4): a static web app with the pre-registered results,
 the central-complex wiring and a replay of the heading task, published on GitHub Pages and
@@ -120,7 +120,7 @@ not the wiring or the signs, as the current limit.
 
 ## [0.2.0] — 2026-10-21
 
-First answer to H2: on the hidden-cue task, the edge of the real CX wiring over a
+First answer to H2 (exact wiring vs cell-type structure): on the hidden-cue task, the edge of the real CX wiring over a
 degree-preserving shuffle replicates on fresh seeds and is explained by cell-type structure.
 
 ### Added
@@ -157,6 +157,10 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
+[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.7.0...develop
+[0.7.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.0
+[0.6.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.6.0
+[0.5.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.5.0
 [0.4.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.4.0
 [0.3.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.3.0
 [0.2.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.2.0

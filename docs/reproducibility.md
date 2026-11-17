@@ -15,9 +15,8 @@ PYTHONPATH=src python -m neuroflynav.provenance --command "python -m pytest" > /
 ```
 
 The required `--command` value is recorded exactly as supplied. The shell redirection shown
-above writes the manifest outside the repository. For project records, keep manifests in private
-`ops/evidence/` and follow the storage and disclosure boundaries in the research and data
-policies. Never include credentials, holdout details, or sensitive paths in `--command`.
+above writes the manifest outside the repository. For project records, keep manifests outside the
+repository, together with the run's other private records. Never include credentials, holdout details, or sensitive paths in `--command`.
 
 The command exits nonzero and writes an explanation to stderr if Git metadata, `environment.yml`,
 or installed metadata for pytest, Ruff, or mypy is unavailable. It does not write partial JSON.
