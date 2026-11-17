@@ -12,6 +12,8 @@ WORKDIR /app
 COPY --chown=mambauser:mambauser pyproject.toml ./
 COPY --chown=mambauser:mambauser src ./src
 COPY --chown=mambauser:mambauser docker/entrypoint.sh ./entrypoint.sh
+# Treat locations for run_homing (OpenStreetMap, ODbL; see app/public/map/ATTRIBUTION.md).
+COPY --chown=mambauser:mambauser app/public/data/treats.geojson ./app/public/data/treats.geojson
 
 ENV PYTHONPATH=/app/src \
     PYTHONUNBUFFERED=1
