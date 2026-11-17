@@ -29,7 +29,7 @@ Warsaw (OpenStreetMap) that flies home by path integration.
 
 | Area | What | Where |
 | --- | --- | --- |
-| Research design | Hypotheses with fair controls, decision rules fixed before each run, fresh seeds, paired 95% CIs, negative results reported as such | [docs/](docs/), results below |
+| Research design | Hypotheses with fair controls, decision rules fixed before each run ([published here](docs/preregistration.md)), fresh seeds, paired 95% CIs, negative results reported as such | [docs/](docs/), results below |
 | Machine learning | Reservoir computing; recurrent networks whose weights live only on connectome edges, trained with backpropagation through time (PyTorch) | [`training/`](src/neuroflynav/training/), [`agent/`](src/neuroflynav/agent/) |
 | Data engineering | Public connectome export → typed graph with checksums; OpenStreetMap extract → vector tiles of Warsaw | [`graph/hemibrain.py`](src/neuroflynav/graph/hemibrain.py), [`geo/`](geo/) |
 | Software engineering | Typed Python (mypy strict), 81 + 13 automated tests, ruff, CI on every pull request, semantic-versioned releases | [`tests/`](tests/), [CI](.github/workflows/quality.yml), [CHANGELOG](CHANGELOG.md) |
@@ -201,6 +201,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
 | [docs/spike_homing.md](docs/spike_homing.md) | Foraging and homing by path integration over central Warsaw, pre-registered result |
+| [docs/preregistration.md](docs/preregistration.md) | Decision rules of every pre-registered comparison, with the commit each run used |
 | [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |
 | [docs/app.md](docs/app.md) | The interactive web app: data export, development, deployment |
 | [infra/README.md](infra/README.md) | Terraform stack for the cloud runs |
