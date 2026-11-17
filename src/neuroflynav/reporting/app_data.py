@@ -152,6 +152,75 @@ def replay(
     }
 
 
+def city(
+    fly: dict[str, object],
+    random: dict[str, object],
+    treats: dict[str, object],
+    summary: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Display flights for the city view from two ``run_homing --traces`` results.
+
+    Both jobs fly the same flights (same seed); only the network, and so the estimated home
+    vector, differs. Positions are converted from local metres to longitude/latitude.
+    """
+    from neuroflynav.tasks.homing import to_lonlat
+
+    if fly["seed"] != random["seed"] or fly["homing"] != random["homing"]:
+        raise ValueError("the two jobs must share seed and homing setup")
+    lon0, lat0 = (float(v) for v in fly["nest"])  # type: ignore[attr-defined]
+    features = treats["features"]
+
+    def lonlat(points: list[list[float]]) -> list[list[float]]:
+        xy = np.asarray(points, dtype=float).reshape(-1, 2)
+        lon, lat = to_lonlat(xy[:, 0], xy[:, 1], lon0, lat0)
+        return [[round(a, 6), round(b, 6)] for a, b in zip(lon, lat, strict=True)]
+
+    flights = []
+    for a, b in zip(fly["traces"], random["traces"], strict=True):  # type: ignore[call-overload]
+        if a["path"] != b["path"]:
+            raise ValueError("flights differ between the two jobs")
+        end = np.asarray(a["path"][-1], dtype=float)
+        returns = {}
+        for name, trace in (("FlyConnectome", a), ("RandomMask", b)):
+            landing = end - np.asarray(trace["estimate"], dtype=float)
+            returns[name] = {
+                "landing": lonlat([landing.tolist()])[0],
+                "error_m": round(float(np.linalg.norm(landing)), 1),
+                "predicted": trace["predicted"],
+            }
+        treat = features[a["treat"]]["properties"] if a["treat"] >= 0 else None  # type: ignore[index]
+        flights.append(
+            {
+                "path": lonlat(a["path"]),
+                "sectors": a["sectors"],
+                "treat": treat,
+                "returns": returns,
+            }
+        )
+    homing = fly["homing"]
+    return {
+        "_source": "run_homing pilot (seed {seed}, whole CX); map data © OpenStreetMap "
+        "contributors (ODbL)".format(seed=fly["seed"]),
+        "seed": fly["seed"],
+        "nest": [lon0, lat0],
+        "homing": homing,
+        "pilot": {
+            name: {
+                "heading_accuracy": job["heading_accuracy"],
+                "error_m": job["error_m"],
+                "flights": job["flights"],
+            }
+            for name, job in (("FlyConnectome", fly), ("RandomMask", random))
+        },
+        "references_m": {
+            "quantised": fly["quantised_error_m"],
+            "no_integration": fly["no_integration_error_m"],
+        },
+        "summary": summary,
+        "flights": flights,
+    }
+
+
 def build(
     summary: dict[str, object],
     matrix_path: Path,
@@ -181,9 +250,10 @@ def build(
         "total_synapses": int(fields["synapses"]),
     }
     files = {"results": results, "wiring": wiring}
-    replay_data = refreshed.get("replay", previous.get("replay"))
-    if replay_data is not None:
-        files["replay"] = replay_data  # type: ignore[assignment]
+    for name in ("replay", "city"):
+        data = refreshed.get(name, previous.get(name))
+        if data is not None:
+            files[name] = data  # type: ignore[assignment]
     return files
 
 
@@ -202,11 +272,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="replay on the compass core (~1 min) instead of the whole CX (~15 min)",
     )
+    parser.add_argument(
+        "--city",
+        action="store_true",
+        help="rebuild city.json from results/homing pilot traces (and summary if present)",
+    )
     arguments = parser.parse_args(argv)
 
     previous = {
         name: data
-        for name in ("results", "wiring", "replay")
+        for name in ("results", "wiring", "replay", "city")
         if (data := _read(arguments.out / f"{name}.json")) is not None
     }
     refreshed: dict[str, object] = {}
@@ -235,6 +310,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 seed=100,
             ),
         }
+
+    if arguments.city:
+        homing_dir = arguments.results_dir / "homing"
+        summary_path = homing_dir / "prereg_city_seeds60-79.json"
+        refreshed["city"] = city(
+            json.loads((homing_dir / "pilot_whole_FlyConnectome.json").read_text()),
+            json.loads((homing_dir / "pilot_whole_RandomMask.json").read_text()),
+            json.loads((arguments.out / "treats.geojson").read_text()),
+            _read(summary_path),
+        )
 
     summary = json.loads((DATA_DIR / "summary.json").read_text())
     files = build(summary, DATA_DIR / "cx_family_matrix.csv", previous, refreshed)

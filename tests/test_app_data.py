@@ -3,6 +3,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from neuroflynav.experiments.run_trained import heading_task
 from neuroflynav.graph.interface import Edge, Graph, NodeRole
@@ -92,3 +93,41 @@ def test_committed_app_data_rebuilds_identically() -> None:
     for name, data in files.items():
         text = json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
         assert text == Path(APP_DATA_DIR / f"{name}.json").read_text(), name
+
+
+def test_city_converts_flights_and_checks_they_match() -> None:
+    from neuroflynav.reporting.app_data import city
+
+    trace = {
+        "path": [[0.0, 0.0], [5.0, 0.0], [10.0, 0.0]],
+        "treat": 0,
+        "sectors": [0, 0],
+        "predicted": [0, 1],
+        "estimate": [7.0, 1.0],
+    }
+    job = {
+        "seed": 100,
+        "nest": [21.0, 52.2],
+        "homing": {"step_m": 5.0},
+        "heading_accuracy": 0.8,
+        "error_m": {"mean": 3.0},
+        "flights": 1,
+        "quantised_error_m": {"mean": 1.0},
+        "no_integration_error_m": {"mean": 2.0},
+        "traces": [trace],
+    }
+    treats: dict[str, object] = {
+        "features": [{"properties": {"id": 0, "kind": "café", "name": "X"}}]
+    }
+    data = city(job, {**job, "traces": [{**trace, "estimate": [10.0, 0.0]}]}, treats)
+    flight = data["flights"][0]  # type: ignore[index]
+    assert flight["path"][0] == [21.0, 52.2]
+    assert flight["treat"]["name"] == "X"
+    assert flight["returns"]["FlyConnectome"]["error_m"] == round(10.0**0.5, 1)
+    assert flight["returns"]["RandomMask"]["error_m"] == 0.0
+    other = {
+        **job,
+        "traces": [{**trace, "path": [[0.0, 0.0], [0.0, 5.0], [0.0, 10.0]]}],
+    }
+    with pytest.raises(ValueError, match="flights differ"):
+        city(job, other, treats)
