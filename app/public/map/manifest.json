@@ -1,0 +1,53 @@
+{
+  "source": "OpenStreetMap, Geofabrik extract mazowieckie-261116.osm.pbf (https://download.geofabrik.de/europe/poland/mazowieckie-261116.osm.pbf)",
+  "source_sha256": "84413df5b106e3fac8cc73b4f2a8f9d325aa2b10384b3f5e7cb46cfb0b95a373",
+  "license": "ODbL 1.0 — © OpenStreetMap contributors",
+  "bbox_wgs84": {
+    "west": 21.0,
+    "south": 52.222,
+    "east": 21.04,
+    "north": 52.245
+  },
+  "built_utc": "2026-11-17T14:13:14+00:00",
+  "layers": {
+    "pmtiles": [
+      "water",
+      "parks",
+      "roads",
+      "buildings"
+    ],
+    "treat_tags": {
+      "amenity": [
+        "cafe",
+        "ice_cream"
+      ],
+      "shop": [
+        "bakery",
+        "confectionery",
+        "pastry"
+      ]
+    }
+  },
+  "counts": {
+    "water": 46,
+    "parks": 4326,
+    "roads": 12411,
+    "buildings": 2982,
+    "treats": 326
+  },
+  "versions": {
+    "osmnx": "2.1.2",
+    "geopandas": "1.2.0"
+  },
+  "tools": "osmium extract --strategy=smart; tippecanoe -Z12 -z16",
+  "outputs": {
+    "app/public/map/warsaw.pmtiles": {
+      "bytes": 1482245,
+      "sha256": "8ddecc9ed0c13032bd5cf292f6efb30dd07fb25e37b72d27e759ff6c43f3e440"
+    },
+    "app/public/data/treats.geojson": {
+      "bytes": 48018,
+      "sha256": "5d8e90f02a663398e631b9f53c1f2239dc15292768ed2350fba7c9744b8aea8e"
+    }
+  }
+}
