@@ -30,7 +30,7 @@ import geopandas as gpd
 import osmnx as ox
 from shapely.geometry import box
 
-# Central Warsaw (Śródmieście and Powiśle, with a stretch of the Vistula): ~2.7 km × 2.6 km.
+# Central Warsaw (Śródmieście and Powiśle, with a stretch of the Vistula): ~2.7 km × 2.5 km.
 BBOX = (21.000, 52.222, 21.040, 52.245)  # west, south, east, north (WGS84)
 
 LAYERS: dict[str, dict[str, object]] = {
