@@ -22,10 +22,9 @@ import json
 import subprocess
 import sys
 import tempfile
+import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
-
-import urllib.request
 
 import geopandas as gpd
 import osmnx as ox
@@ -66,7 +65,7 @@ def sha256(path: Path) -> str:
 
 
 def md5(path: Path) -> str:
-    digest = hashlib.md5()  # noqa: S324 — Geofabrik publishes MD5 checksums
+    digest = hashlib.md5()  # Geofabrik publishes MD5 checksums
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1 << 20), b""):
             digest.update(chunk)
@@ -78,8 +77,8 @@ def local_osm() -> Path:
     pbf = RAW / EXTRACT
     if not pbf.exists():
         print(f"downloading {EXTRACT_URL}", file=sys.stderr)
-        urllib.request.urlretrieve(EXTRACT_URL, pbf)  # noqa: S310 — fixed https URL
-        with urllib.request.urlopen(f"{EXTRACT_URL}.md5") as response:  # noqa: S310
+        urllib.request.urlretrieve(EXTRACT_URL, pbf)  # fixed https URL
+        with urllib.request.urlopen(f"{EXTRACT_URL}.md5") as response:
             expected = response.read().decode().split()[0]
         if md5(pbf) != expected:
             pbf.unlink()
