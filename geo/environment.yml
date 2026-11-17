@@ -1,0 +1,12 @@
+name: neuroflynav-geo
+
+# Geospatial tools for the "fly in the city" map data (kept out of the training image).
+channels:
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  - python=3.12
+  - osmnx
+  - geopandas
+  - tippecanoe

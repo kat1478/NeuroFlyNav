@@ -12,14 +12,15 @@ of a navigation agent. It then compares that agent against fair controls: the sa
 shuffled, a random network of the same size, and a network with no memory at all. Biological
 topology is a hypothesis to test, not an assumption; a negative result is a valid outcome.
 
-> **Status: v0.6.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> **Status: v0.7.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Dynamics,
 > inputs and readout are placeholders, and no experiment has been frozen yet. Numbers below
 > are first looks (most of them pre-registered), not a scientific claim.
 
 **Explore the results interactively: [kat1478.github.io/NeuroFlyNav](https://kat1478.github.io/NeuroFlyNav/)**
 — every pre-registered comparison seed by seed, the central-complex wiring with a glossary of its
-cell types, and a step-by-step replay of a network keeping track of heading.
+cell types, a step-by-step replay of a network keeping track of heading, and a fly foraging over
+central Warsaw (OpenStreetMap) that flies home by path integration.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/cx-wiring-dark.png">
@@ -103,6 +104,13 @@ shuffle (+3.7). Shuffling within cell types costs only +1.1, so cell-type struct
 carries most of the advantage. One task, one model, one training budget — a lead, not a
 conclusion. See [docs/spike_trained.md](docs/spike_trained.md).
 
+Does that heading edge help a fly **get home**? A follow-up flies the same trained networks on
+foraging trips through the real café and bakery layout of central Warsaw and sums their heading
+estimates into a home vector. Pre-registered on fresh seeds: the real wiring lands 1.2 m closer to
+the nest than a random wiring of the same size, but the interval includes zero (−1.2 m [−4.1, +1.7])
+— **no homing advantage**. Training matters far more (with frozen recurrent weights the fly lands 166 m away).
+See [docs/spike_homing.md](docs/spike_homing.md).
+
 ## Cloud runs
 
 The whole-CX sweep (5 variants × 20 seeds) would take ~30 h on a laptop. It runs on AWS as a
@@ -152,6 +160,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_m1.md](docs/spike_m1.md) | M1: real hemibrain CX wiring, data download, multi-seed results |
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
+| [docs/spike_homing.md](docs/spike_homing.md) | Foraging and homing by path integration over central Warsaw, pre-registered result |
 | [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |
 | [docs/app.md](docs/app.md) | The interactive web app: data export, development, deployment |
 | [infra/README.md](infra/README.md) | Terraform stack for the cloud runs |

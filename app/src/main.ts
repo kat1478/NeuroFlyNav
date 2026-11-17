@@ -10,6 +10,11 @@ const views: Record<string, { title: string; render: Render }> = {
   results: { title: "Results", render: renderResults },
   wiring: { title: "Wiring", render: renderWiring },
   replay: { title: "Replay", render: renderReplay },
+  // The map library is large, so the city view is loaded only when it is opened.
+  city: {
+    title: "City",
+    render: (root, scope) => import("./views/city").then((m) => m.renderCity(root, scope)),
+  },
 };
 
 export function viewFromHash(hash: string): string {

@@ -5,7 +5,32 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
-## [0.6.0] — 2026-11-16
+## [0.7.0] — 2026-11-17
+
+Fly in the city: a simulated fly forages over central Warsaw (OpenStreetMap) and flies home by
+path integration, using the heading estimated by the trained central-complex network. A
+pre-registered test finds **no homing advantage** of the real wiring over a random one.
+
+### Added
+- Map data pipeline `geo/build_map.py` (env `neuroflynav-geo`: osmnx, geopandas, tippecanoe,
+  osmium-tool): dated Geofabrik extract → central Warsaw → PMTiles (1.5 MB) and 326 treats;
+  manifest with SHA-256; ODbL attribution.
+- Homing task `tasks/homing.py`, experiment `run_homing` (per variant × seed, AWS Batch via
+  `MODULE=run_homing`), `aggregate_homing`; references for quantisation only and no integration.
+- App: **City** view (MapLibre + self-hosted PMTiles, lazily loaded), `city.json` export
+  (`app_data --city`), OSM credit in the footer.
+- Docs: `docs/spike_homing.md`; README paragraph; learning-friendly app docs.
+
+### Results (pre-registered, whole CX, seeds 60–79, 100 flights per seed)
+- Mean homing error: real wiring 27.2 m, random 28.4 m, degree-shuffled 29.2 m, type-shuffled
+  27.1 m, frozen recurrent weights 166 m; references: true sectors 12.1 m, no integration 32.0 m.
+- Fly − RandomMask **−1.2 m [−4.1, +1.7]** — interval includes zero: no homing advantage.
+
+### Checks
+- Independent science review (re-aggregated 100 jobs) and UI/UX audit of the City view; all
+  findings fixed.
+
+ — 2026-11-16
 
 Interactive results explorer (start of M4): a static web app with the pre-registered results,
 the central-complex wiring and a replay of the heading task, published on GitHub Pages and

@@ -58,8 +58,9 @@ const cache = new Map<string, Promise<unknown>>();
 function load<T>(name: string): Promise<T> {
   let promise = cache.get(name) as Promise<T> | undefined;
   if (!promise) {
-    promise = fetch(`${import.meta.env.BASE_URL}data/${name}.json`).then(async (response) => {
-      if (!response.ok) throw new Error(`could not load ${name}.json (${response.status})`);
+    const file = name === "treats" ? "treats.geojson" : `${name}.json`;
+    promise = fetch(`${import.meta.env.BASE_URL}data/${file}`).then(async (response) => {
+      if (!response.ok) throw new Error(`could not load ${file} (${response.status})`);
       return (await response.json()) as T;
     });
     promise.catch(() => cache.delete(name));
@@ -83,3 +84,53 @@ export function scoredAccuracy(predicted: number[], truth: number[], scored: boo
   });
   return total === 0 ? 0 : hits / total;
 }
+
+export interface CityReturn {
+  landing: [number, number];
+  error_m: number;
+  predicted: number[];
+}
+
+export interface CityFlight {
+  path: [number, number][];
+  sectors: number[];
+  treat: { id: number; kind: string; name: string } | null;
+  returns: Record<"FlyConnectome" | "RandomMask", CityReturn>;
+}
+
+interface Estimate {
+  mean: number;
+  low: number;
+  high: number;
+}
+
+export interface City {
+  _source: string;
+  seed: number;
+  nest: [number, number];
+  homing: { step_m: number; detect_m: number; max_steps: number; landmark_every: number };
+  pilot: Record<
+    "FlyConnectome" | "RandomMask",
+    { heading_accuracy: number; error_m: { mean: number; median: number }; flights: number }
+  >;
+  references_m: { quantised: { mean: number }; no_integration: { mean: number } };
+  summary: {
+    seeds: number[];
+    mean_error_m: Record<string, Estimate>;
+    heading_accuracy: Record<string, Estimate>;
+    fly_minus_error_m: Record<string, Estimate>;
+    quantised_error_m: Estimate;
+    no_integration_error_m: Estimate;
+  } | null;
+  flights: CityFlight[];
+}
+
+export interface TreatFeature {
+  type: "Feature";
+  properties: { id: number; kind: string; name: string };
+  geometry: { type: "Point"; coordinates: [number, number] };
+}
+
+export const loadCity = (): Promise<City> => load<City>("city");
+export const loadTreats = (): Promise<{ type: "FeatureCollection"; features: TreatFeature[] }> =>
+  load("treats");

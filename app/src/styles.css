@@ -520,3 +520,162 @@ a:focus-visible {
 .ring-figure[data-verdict="right"] .verdict {
   color: var(--ink);
 }
+
+/* ---------- city view ---------- */
+.city-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .city-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.city-map {
+  height: 520px;
+  border: 1px solid var(--grid);
+  border-radius: 10px;
+  overflow: hidden;
+}
+@media (max-width: 560px) {
+  .city-map {
+    height: 420px;
+  }
+}
+.city-side p {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.city-errors li {
+  grid-template-columns: 1.2em 1fr auto;
+}
+.swatch-line {
+  display: block;
+  width: 1.1em;
+  height: 4px;
+  border-radius: 2px;
+}
+.map-marker {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--ink);
+  border: 1px solid var(--baseline);
+  font:
+    600 12px/1.4 system-ui,
+    sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.fly-icon {
+  color: var(--ink);
+  filter: drop-shadow(0 0 2px var(--surface));
+  pointer-events: none;
+}
+.nest-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 3px solid var(--surface);
+  pointer-events: none;
+}
+.landing-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  pointer-events: none;
+}
+.landing-dot.landing-FlyConnectome {
+  background: var(--fly);
+}
+.landing-dot.landing-RandomMask {
+  width: 14px;
+  height: 13px;
+  border: 0;
+  border-radius: 0;
+  background: var(--random);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 11px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.key-line {
+  display: inline-block;
+  width: 26px;
+  height: 0;
+  border-top: 3px solid var(--ink);
+}
+.key-line.key-outbound {
+  border-top: 2px dashed var(--ink);
+}
+.key-line.key-FlyConnectome {
+  border-top: 3px solid var(--fly);
+}
+.key-line.key-RandomMask {
+  border-top: 6px dashed var(--random);
+}
+.key-line.key-error {
+  border-top: 2px dotted var(--ink-2);
+}
+.key-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.key-dot.key-nest {
+  background: var(--ink);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.key-dot.key-treat {
+  width: 6px;
+  height: 6px;
+  background: var(--muted);
+}
+.city-errors li {
+  grid-template-columns: 2em 1fr auto;
+}
+/* MapLibre controls follow the app theme */
+.city-map .maplibregl-ctrl-group {
+  background: var(--raised);
+  border: 1px solid var(--grid);
+  box-shadow: none;
+}
+.city-map .maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--grid);
+}
+.city-map .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.city-map .maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: var(--raised);
+  color: var(--ink-2);
+}
+.city-map .maplibregl-ctrl-attrib a {
+  color: var(--ink-2);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .maplibregl-ctrl button .maplibregl-ctrl-icon,
+  :root:not([data-theme="light"]) .maplibregl-ctrl-attrib-button {
+    filter: invert(1);
+  }
+}

@@ -4,7 +4,8 @@
 # Job choice (one of):
 #   AWS_BATCH_JOB_ARRAY_INDEX (set by AWS Batch for array jobs) + FIRST_SEED
 #   VARIANT + SEED
-# Optional: EXTRA_ARGS (e.g. "--core --steps 5"), BUCKET + RUN_ID (upload result to S3).
+# Optional: MODULE (run_trained, default, or run_homing), EXTRA_ARGS (e.g. "--core --steps 5"),
+# BUCKET + RUN_ID (upload result to S3).
 set -euo pipefail
 
 DATA_URL="https://storage.googleapis.com/hemibrain/v1.2/exported-traced-adjacencies-v1.2.tar.gz"
@@ -27,8 +28,14 @@ else
 fi
 output="results/${name}.json"
 
+module="${MODULE:-run_trained}"
+case "$module" in
+    run_trained | run_homing) ;;
+    *) echo "unknown MODULE: $module" >&2; exit 2 ;;
+esac
+
 # shellcheck disable=SC2086  # EXTRA_ARGS is intentionally split into words
-python -m neuroflynav.experiments.run_trained "${job_args[@]}" ${EXTRA_ARGS:-} --output "$output" > /dev/null
+python -m "neuroflynav.experiments.${module}" "${job_args[@]}" ${EXTRA_ARGS:-} --output "$output" > /dev/null
 
 if [[ -n "${BUCKET:-}" ]]; then
     aws s3 cp "$output" "s3://${BUCKET}/runs/${RUN_ID:?RUN_ID is required with BUCKET}/${name}.json"
