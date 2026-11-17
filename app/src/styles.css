@@ -524,7 +524,7 @@ a:focus-visible {
 /* ---------- city view ---------- */
 .city-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 16px;
   align-items: start;
 }
@@ -594,9 +594,88 @@ a:focus-visible {
   background: var(--fly);
 }
 .landing-dot.landing-RandomMask {
+  width: 14px;
+  height: 13px;
+  border: 0;
+  border-radius: 0;
   background: var(--random);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 
 .maplibregl-ctrl-attrib {
   font-size: 11px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.key-line {
+  display: inline-block;
+  width: 26px;
+  height: 0;
+  border-top: 3px solid var(--ink);
+}
+.key-line.key-outbound {
+  border-top: 2px dashed var(--ink);
+}
+.key-line.key-FlyConnectome {
+  border-top: 3px solid var(--fly);
+}
+.key-line.key-RandomMask {
+  border-top: 6px dashed var(--random);
+}
+.key-line.key-error {
+  border-top: 2px dotted var(--ink-2);
+}
+.key-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.key-dot.key-nest {
+  background: var(--ink);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.key-dot.key-treat {
+  width: 6px;
+  height: 6px;
+  background: var(--muted);
+}
+.city-errors li {
+  grid-template-columns: 2em 1fr auto;
+}
+/* MapLibre controls follow the app theme */
+.city-map .maplibregl-ctrl-group {
+  background: var(--raised);
+  border: 1px solid var(--grid);
+  box-shadow: none;
+}
+.city-map .maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--grid);
+}
+.city-map .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.city-map .maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: var(--raised);
+  color: var(--ink-2);
+}
+.city-map .maplibregl-ctrl-attrib a {
+  color: var(--ink-2);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .maplibregl-ctrl button .maplibregl-ctrl-icon,
+  :root:not([data-theme="light"]) .maplibregl-ctrl-attrib-button {
+    filter: invert(1);
+  }
 }

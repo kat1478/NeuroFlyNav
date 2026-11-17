@@ -108,7 +108,7 @@ Does that heading edge help a fly **get home**? A follow-up flies the same train
 foraging trips through the real café and bakery layout of central Warsaw and sums their heading
 estimates into a home vector. Pre-registered on fresh seeds: the real wiring lands 1.2 m closer to
 the nest than a random wiring of the same size, but the interval includes zero (−1.2 m [−4.1, +1.7])
-— **no homing advantage**. Training matters far more (an untrained network lands 166 m away).
+— **no homing advantage**. Training matters far more (with frozen recurrent weights the fly lands 166 m away).
 See [docs/spike_homing.md](docs/spike_homing.md).
 
 ## Cloud runs

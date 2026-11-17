@@ -14,7 +14,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { Protocol } from "pmtiles";
 import { loadCity, loadTreats, type City, type CityFlight } from "../data";
 import type { Scope } from "../lifecycle";
-import { onScheme, palette, SERIES_LABEL, type Palette } from "../theme";
+import { onScheme, palette, type Palette } from "../theme";
 import { el, pct } from "../ui";
 
 type Net = "FlyConnectome" | "RandomMask";
@@ -121,7 +121,19 @@ function baseStyle(url: string, p: Palette, dark: boolean): StyleSpecification {
         paint: {
           "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 1.8, 16, 4],
           "circle-color": p.muted,
-          "circle-opacity": 0.7,
+          "circle-opacity": dark ? 0.9 : 0.7,
+        },
+      },
+      {
+        id: "treat-found",
+        type: "circle",
+        source: "treats",
+        filter: ["==", ["get", "id"], -1],
+        paint: {
+          "circle-radius": 7,
+          "circle-color": p.ink,
+          "circle-stroke-color": p.surface,
+          "circle-stroke-width": 2.5,
         },
       },
       {
@@ -138,12 +150,21 @@ function baseStyle(url: string, p: Palette, dark: boolean): StyleSpecification {
         filter: ["==", ["get", "kind"], "error"],
         paint: { "line-color": ["get", "color"], "line-width": 1.5, "line-dasharray": [0.6, 1.4] },
       },
+      // Identity is not colour alone: random wiring = wide dashed line underneath,
+      // real wiring = narrow solid line on top (they often nearly coincide).
       {
-        id: "return",
+        id: "return-random",
         type: "line",
         source: "trips",
-        filter: ["==", ["get", "kind"], "return"],
-        paint: { "line-color": ["get", "color"], "line-width": 3.5 },
+        filter: ["all", ["==", ["get", "kind"], "return"], ["==", ["get", "net"], "RandomMask"]],
+        paint: { "line-color": ["get", "color"], "line-width": 7, "line-dasharray": [1.2, 0.8] },
+      },
+      {
+        id: "return-real",
+        type: "line",
+        source: "trips",
+        filter: ["all", ["==", ["get", "kind"], "return"], ["==", ["get", "net"], "FlyConnectome"]],
+        paint: { "line-color": ["get", "color"], "line-width": 2.5 },
       },
     ],
   };
@@ -165,7 +186,7 @@ function flyIcon(): HTMLElement {
   return wrap;
 }
 
-/** Landing dot at the exact point; its label sits above, real wiring left, random right. */
+/** Landing marker: circle for the real wiring, triangle for the random wiring. */
 function landingDot(net: Net): HTMLElement {
   return el("span", { className: `landing-dot landing-${net}` });
 }
@@ -206,7 +227,7 @@ export function tripFeatures(
       const end = lerp(start, landing, Math.min(1, returnFraction));
       features.push({
         type: "Feature",
-        properties: { kind: "return", color: colors[key] },
+        properties: { kind: "return", net: key, color: colors[key] },
         geometry: { type: "LineString", coordinates: [start, end] },
       });
       if (returnFraction >= 1) {
@@ -241,9 +262,10 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
         "Insects that forage keep a running sum of every turn and every stretch they fly — a " +
         "home vector — so they can fly straight back to their nest. Here a simulated fly leaves " +
         "its nest in Park Świętokrzyski, searches until it smells a real café, bakery or ice-cream " +
-        "shop from OpenStreetMap, and then flies home. Its heading at every step comes from the " +
-        "trained network of the Replay view: one built on the real central-complex wiring, one on " +
-        "a random wiring of the same size.",
+        "shop from OpenStreetMap, and then flies home. At every step a trained network (the one in the " +
+        "Replay view) estimates the fly's compass heading as one of 8 sectors; adding up these " +
+        "estimates gives the home vector the fly follows back. Two networks are compared: one " +
+        "built on the real central-complex wiring, one on a random wiring of the same size.",
     }),
   );
 
@@ -254,7 +276,15 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   play.type = "button";
   const status = el("span", { className: "step-label" });
   const mapBox = el("div", { className: "city-map" });
-  mapBox.setAttribute("role", "img");
+  const mapSummary = el("p", { className: "sr-only" });
+  mapSummary.id = "city-map-summary";
+  mapBox.setAttribute("role", "region");
+  mapBox.setAttribute("aria-label", "Map of central Warsaw with the flight");
+  mapBox.setAttribute("aria-describedby", mapSummary.id);
+  const zoomButton = el("button", { className: "link-button", text: "Close-up of the nest" });
+  zoomButton.type = "button";
+  const mapError = el("p", { className: "error" });
+  mapError.hidden = true;
   const side = el("aside", { className: "family-card city-side" });
   const legend = el("p", { className: "cell-key" });
 
@@ -264,17 +294,29 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
       { className: "card" },
       el("h2", { text: "One foraging trip" }),
       el("div", { className: "controls" }, el("span", { text: "Flight" }), flightButtons),
-      el("div", { className: "city-layout" }, mapBox, side),
-      el("div", { className: "player" }, play, status),
-      legend,
+      el(
+        "div",
+        { className: "city-layout" },
+        el(
+          "div",
+          {},
+          mapBox,
+          mapError,
+          mapSummary,
+          el("div", { className: "player" }, play, status, zoomButton),
+          legend,
+        ),
+        side,
+      ),
       el("p", {
         className: "note",
         text:
           "An illustration, not a navigation system: the fly flies over buildings, does not see " +
           "the map, and the network reports only 8 heading sectors (45° each), so even perfect " +
           `sector answers miss the nest by ${city.references_m.quantised.mean.toFixed(0)} m on ` +
-          `average. Flights are the first six of seed ${city.seed}, not hand-picked; flying ` +
-          "5 m per step, with a landmark glimpse every 8 steps as in training.",
+          `average. The six flights are the first six of pilot seed ${city.seed} (not part of the ` +
+          "test below), not hand-picked; the fly moves 5 m per step and glimpses a landmark every " +
+          "8 steps, as in training.",
       }),
     ),
   );
@@ -297,7 +339,7 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
       [21.07, 52.262],
     ],
     minZoom: 12.5,
-    maxZoom: 17.5,
+    maxZoom: 19.5,
     attributionControl: { compact: true },
     cooperativeGestures: true,
   });
@@ -311,6 +353,10 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   const flyMarker = new Marker({ element: flyIcon() });
   // Landing points are often metres from the nest, so their distances are listed in the
   // side panel rather than as map labels (which would collide).
+  const treatPositions = new Map(
+    treats.features.map((f) => [f.properties.id, f.geometry.coordinates] as const),
+  );
+  let closeUp = false;
   const landingMarkers = NETS.map(({ key }) => ({
     key,
     dot: new Marker({ element: landingDot(key) }),
@@ -335,11 +381,9 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     if (!source) return;
     const current = flight();
     source.setData(tripFeatures(city, current, step, returnFraction, colors(palette())));
-    const position =
-      returnFraction > 0
-        ? current.path[current.path.length - 1]
-        : current.path[Math.min(step, current.path.length - 1)];
-    flyMarker.setLngLat(position).addTo(map);
+    // The single fly is shown while searching; on the way home the two networks' lines take over.
+    if (returnFraction > 0) flyMarker.remove();
+    else flyMarker.setLngLat(current.path[Math.min(step, current.path.length - 1)]).addTo(map);
     for (const { key, dot } of landingMarkers) {
       if (returnFraction >= 1) dot.setLngLat(current.returns[key].landing).addTo(map);
       else dot.remove();
@@ -348,22 +392,26 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     status.textContent =
       returnFraction > 0
         ? returnFraction >= 1
-          ? "Back home — dotted lines show how far each fly landed from the nest"
+          ? "Back home — dotted lines show how far each landed from the nest"
           : "Flying home along the estimated home vector…"
         : `Searching · step ${Math.min(step, outboundTotal)} / ${outboundTotal}`;
-    play.textContent = playing
-      ? "❚❚ Pause"
-      : step === 0 && returnFraction === 0
-        ? "▶ Play"
-        : "▶ Replay";
-    mapBox.setAttribute(
-      "aria-label",
-      `Map of central Warsaw: flight ${flightIndex + 1} from the nest to ` +
-        `${current.treat ? current.treat.name || `a ${current.treat.kind}` : "no treat"}; ` +
-        NETS.map(
-          ({ key, short }) => `${short} lands ${current.returns[key].error_m} m from the nest`,
-        ).join(", "),
-    );
+    const label = playing ? "Pause" : step === 0 && returnFraction === 0 ? "Play" : "Replay";
+    play.textContent = `${playing ? "❚❚" : "▶"} ${label}`;
+    play.setAttribute("aria-label", label);
+    play.setAttribute("aria-pressed", String(playing));
+    zoomButton.hidden = returnFraction < 1;
+  }
+
+  function describe(): void {
+    const current = flight();
+    mapSummary.textContent =
+      `Flight ${flightIndex + 1} from the nest to ` +
+      `${current.treat ? current.treat.name || `a ${current.treat.kind}` : "no treat"}; ` +
+      NETS.map(
+        ({ key, short }) =>
+          `${short} lands ${current.returns[key].error_m.toFixed(0)} m from the nest`,
+      ).join(", ") +
+      ".";
   }
 
   function drawSide(): void {
@@ -375,27 +423,28 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     treatMarker.getElement().textContent = current.treat
       ? current.treat.name || current.treat.kind
       : "";
-    if (current.treat) treatMarker.setLngLat(end).addTo(map);
+    const treatAt = current.treat ? treatPositions.get(current.treat.id) : undefined;
+    if (treatAt) treatMarker.setLngLat(treatAt).addTo(map);
     else treatMarker.remove();
-    const rows = NETS.map(({ key, series }) =>
+    if (map.getLayer("treat-found")) {
+      map.setFilter("treat-found", ["==", ["get", "id"], current.treat ? current.treat.id : -1]);
+    }
+    const rows = NETS.map(({ key, short }) =>
       el(
         "li",
         {},
-        el("span", { className: "swatch-line", text: "" }),
-        el("span", { text: SERIES_LABEL[series] }),
+        el("span", { className: `key-line key-${key}` }),
+        el("span", { text: short }),
         el("strong", { className: "num", text: `${current.returns[key].error_m.toFixed(0)} m` }),
       ),
     );
-    rows.forEach((row, i) => {
-      (row.firstChild as HTMLElement).style.background = colors(palette())[NETS[i].key];
-    });
     side.replaceChildren(
       el("h3", { text: `Flight ${flightIndex + 1}` }),
       el(
         "div",
         { className: "stats" },
         stat(`${((current.path.length - 1) * city.homing.step_m).toFixed(0)} m`, "flown out"),
-        stat(`${metres(city.nest, end).toFixed(0)} m`, "straight home"),
+        stat(`${metres(city.nest, end).toFixed(0)} m`, "to the nest"),
         stat(String(current.path.length - 1), "steps"),
       ),
       el("p", {}, el("strong", { text: "Treat: " }), treatText),
@@ -432,28 +481,44 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
       return;
     }
     const d = s.fly_minus_error_m.RandomMask;
+    const signed = (v: number): string => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}`;
+    const ci = `${signed(d.low)} to ${signed(d.high)} m`;
+    let verdict: string;
+    if (d.high < 0) {
+      verdict =
+        `The real wiring lands ${Math.abs(d.mean).toFixed(1)} m closer to the nest on average, ` +
+        `and the 95% confidence interval of the difference (${ci}) lies below zero: a small ` +
+        "but clear homing advantage.";
+    } else if (d.low > 0) {
+      verdict =
+        `The real wiring lands ${d.mean.toFixed(1)} m further from the nest on average, and ` +
+        `the 95% confidence interval of the difference (${ci}) lies above zero: the random ` +
+        "wiring homes better.";
+    } else {
+      verdict =
+        `The real wiring lands ${Math.abs(d.mean).toFixed(1)} m ${d.mean < 0 ? "closer to" : "further from"} ` +
+        `the nest on average, but the 95% confidence interval of the difference (${ci}) ` +
+        "includes zero: no measurable homing advantage.";
+    }
     resultCard.replaceChildren(
       head,
       el("p", {
         className: "lede",
         text:
-          `Pre-registered test, seeds ${s.seeds[0]}–${s.seeds[s.seeds.length - 1]}, 100 flights ` +
-          `per seed: the real wiring lands ${Math.abs(d.mean).toFixed(1)} m ` +
-          `${d.mean < 0 ? "closer to" : "further from"} the nest than a random wiring of the same ` +
-          `size (95% CI ${d.low.toFixed(1)} to ${d.high.toFixed(1)} m). ` +
-          (d.high < 0
-            ? "The interval is below zero: a small but clear homing advantage."
-            : "The interval includes zero or lies above it: no homing advantage."),
+          `Pre-registered test on fresh seeds ${s.seeds[0]}–${s.seeds[s.seeds.length - 1]} ` +
+          `(${s.seeds.length} trained networks of each kind, 100 flights each). ${verdict}`,
       }),
       el(
         "p",
         { className: "note" },
-        `Mean distance from the nest: real ${s.mean_error_m.FlyConnectome.mean.toFixed(1)} m, ` +
-          `random ${s.mean_error_m.RandomMask.mean.toFixed(1)} m; perfect sector answers ` +
-          `${s.quantised_error_m.mean.toFixed(1)} m; no integration ` +
-          `${s.no_integration_error_m.mean.toFixed(1)} m. Heading accuracy on the flights: real ` +
-          `${pct(s.heading_accuracy.FlyConnectome.mean)}, random ` +
-          `${pct(s.heading_accuracy.RandomMask.mean)}.`,
+        `Average distance from the nest: real wiring ${s.mean_error_m.FlyConnectome.mean.toFixed(1)} m, ` +
+          `random wiring ${s.mean_error_m.RandomMask.mean.toFixed(1)} m. For comparison, a fly ` +
+          `that keeps the heading it saw at the last landmark lands ${s.no_integration_error_m.mean.toFixed(0)} m ` +
+          `away, and perfect compass answers (true sectors) ${s.quantised_error_m.mean.toFixed(0)} m. ` +
+          `The real wiring's heading answers were slightly more accurate on these flights ` +
+          `(${pct(s.heading_accuracy.FlyConnectome.mean)} vs ${pct(s.heading_accuracy.RandomMask.mean)}), ` +
+          "but that did not turn into measurably closer landings. Negative differences mean the " +
+          "real wiring lands closer.",
       ),
     );
   }
@@ -464,6 +529,20 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     returnFraction = 0;
     buttons.forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
     const path = city.flights[i].path;
+    overview();
+    closeUp = false;
+    zoomButton.textContent = "Close-up of the nest";
+    if (reduceMotion && !playing) {
+      step = path.length - 1;
+      returnFraction = 1;
+    }
+    drawSide();
+    drawData();
+    describe();
+  }
+
+  function overview(): void {
+    const path = flight().path;
     const lons = [...path.map((p) => p[0]), city.nest[0]];
     const lats = [...path.map((p) => p[1]), city.nest[1]];
     map.fitBounds(
@@ -471,15 +550,30 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
         [Math.min(...lons), Math.min(...lats)],
         [Math.max(...lons), Math.max(...lats)],
       ],
-      { padding: 70, maxZoom: 16.5, duration: reduceMotion ? 0 : 600 },
+      { padding: 70, maxZoom: 16.5, duration: reduceMotion ? 0 : 700 },
     );
-    if (reduceMotion && !playing) {
-      step = path.length - 1;
-      returnFraction = 1;
-    }
-    drawSide();
-    drawData();
   }
+
+  /** Zoom to the nest and both landing points: errors are metres, the trip hundreds. */
+  function nestCloseUp(): void {
+    const points = [city.nest, ...NETS.map(({ key }) => flight().returns[key].landing)];
+    const lons = points.map((p) => p[0]);
+    const lats = points.map((p) => p[1]);
+    map.fitBounds(
+      [
+        [Math.min(...lons), Math.min(...lats)],
+        [Math.max(...lons), Math.max(...lats)],
+      ],
+      { padding: 90, maxZoom: 19.5, duration: reduceMotion ? 0 : 900 },
+    );
+  }
+
+  zoomButton.addEventListener("click", () => {
+    closeUp = !closeUp;
+    zoomButton.textContent = closeUp ? "Show the whole trip" : "Close-up of the nest";
+    if (closeUp) nestCloseUp();
+    else overview();
+  });
 
   const buttons = city.flights.map((_, i) => {
     const button = el("button", { text: String(i + 1) });
@@ -498,7 +592,12 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     const total = flight().path.length - 1;
     if (step < total) step = Math.min(total, step + dt * 14);
     else if (returnFraction < 1) returnFraction = Math.min(1, returnFraction + dt / 1.4);
-    else playing = false;
+    else {
+      playing = false;
+      closeUp = true;
+      zoomButton.textContent = "Show the whole trip";
+      nestCloseUp();
+    }
     stepView();
     if (playing) frame = requestAnimationFrame(tick);
   }
@@ -515,6 +614,11 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     if (step >= flight().path.length - 1 && returnFraction >= 1) {
       step = 0;
       returnFraction = 0;
+      if (closeUp) {
+        closeUp = false;
+        zoomButton.textContent = "Close-up of the nest";
+        overview();
+      }
     }
     playing = true;
     last = 0;
@@ -529,14 +633,24 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     } else start();
   });
 
+  const keyItem = (sample: HTMLElement, text: string): HTMLElement =>
+    el("span", { className: "key-item" }, sample, el("span", { text }));
   legend.replaceChildren(
-    el("span", { text: "⌂ nest" }),
-    el("span", { text: "• treats (OpenStreetMap)" }),
-    el("span", { text: "- - outbound search" }),
-    el("span", { text: "━ flight home, real wiring (blue)" }),
-    el("span", { text: "━ flight home, random wiring (green)" }),
-    el("span", { text: "● where each fly lands · ··· distance left to the nest" }),
+    keyItem(el("span", { className: "key-dot key-nest" }), "nest"),
+    keyItem(el("span", { className: "key-dot key-treat" }), "treats (OpenStreetMap)"),
+    keyItem(el("span", { className: "key-line key-outbound" }), "search flight"),
+    keyItem(el("span", { className: "key-line key-FlyConnectome" }), "home, real wiring (●)"),
+    keyItem(el("span", { className: "key-line key-RandomMask" }), "home, random wiring (▲)"),
+    keyItem(el("span", { className: "key-line key-error" }), "distance left to the nest"),
   );
+
+  map.on("error", (event) => {
+    const message = String(event.error?.message ?? "");
+    if (/pmtiles|tile|fetch|range/i.test(message)) {
+      mapError.textContent = "The map tiles could not be loaded; the flights are still listed.";
+      mapError.hidden = false;
+    }
+  });
 
   map.on("load", () => {
     (map.getSource("treats") as GeoJSONSource).setData(treats as unknown as FeatureCollection);
@@ -555,6 +669,9 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     map.setPaintProperty("roads-major", "line-color", c.major);
     map.setPaintProperty("buildings", "fill-color", c.building);
     map.setPaintProperty("treats", "circle-color", p.muted);
+    map.setPaintProperty("treats", "circle-opacity", isDark() ? 0.9 : 0.7);
+    map.setPaintProperty("treat-found", "circle-color", p.ink);
+    map.setPaintProperty("treat-found", "circle-stroke-color", p.surface);
     map.setPaintProperty("outbound", "line-color", p.ink);
     drawSide();
     stepView();
