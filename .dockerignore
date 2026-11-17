@@ -1,7 +1,8 @@
-# Only environment.yml, pyproject.toml, src/ and docker/ are needed in the image.
+# Only these files are needed in the image (allowlist).
 *
 !environment.yml
 !pyproject.toml
 !src/
 !docker/entrypoint.sh
+!app/public/data/treats.geojson
 **/__pycache__
