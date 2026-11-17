@@ -4,17 +4,16 @@ Source: the public ``exported-traced-adjacencies-v1.2`` export of hemibrain v1.2
 (non-cropped Traced neurons only; CC BY 4.0; cite Scheffer et al. 2020). Download it to
 ``data/hemibrain/v1.2/`` (gitignored); see ``docs/spike_m1.md``.
 
-Selection follows the owner-approved subgraph rule (ops D-035) as far as this export
-allows: a neuron is included when it has at least one synapse in any of the six primary
+Selection rule (as far as this export allows): a neuron is included when it has at least one synapse in any of the six primary
 CX regions, and every directed edge between included neurons with total ``weight >= 1``
 is kept. Export limits: only Traced neurons, ROI membership is seen only through
 synapses with other traced neurons, and ``weightHP`` is not available.
 
 Sensory/motor roles (ring ``ER*`` neurons in, ``PFL*`` neurons out), the weight
 transforms and the optional sign rule are exploratory spike conventions, not frozen
-modeling choices. The sign rule (owner-approved for exploration, 2026-10-21) makes the
+modeling choices. The optional, exploratory sign rule makes the
 outgoing edges of Δ7 (glutamatergic) and ring ``ER*`` (GABAergic) neurons inhibitory and
-everything else excitatory — a simplified evidence-constrained camp (TASK-013 camp B).
+everything else excitatory — a simplified, evidence-based convention.
 """
 
 from __future__ import annotations

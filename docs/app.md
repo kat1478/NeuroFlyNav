@@ -11,7 +11,7 @@ A static web app in [`app/`](../app/) shows the results to visitors:
 | Replay | Two trained whole-CX networks (real vs random wiring) tracking heading, step by step |
 | City | A fly forages over central Warsaw (OpenStreetMap) and flies home by path integration; real vs random wiring ([spike_homing.md](spike_homing.md)) |
 
-There is no server and no model in the browser: the app reads three small JSON files in
+There is no server and no model in the browser: the app reads four small JSON files (plus `treats.geojson`) in
 `app/public/data/`, written by `neuroflynav.reporting.app_data` from committed result
 summaries (and, with `--refresh`, from local results and the hemibrain export; with `--city`,
 from the homing pilot traces and summary). Only family-level aggregates and synthetic-task traces

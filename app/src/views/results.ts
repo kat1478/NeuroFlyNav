@@ -395,14 +395,17 @@ export async function renderResults(root: HTMLElement, scope: Scope): Promise<vo
   if (!scope.active) return;
   root.append(
     el("h1", { text: "Does real fly wiring make a better network?" }),
-    el("p", {
-      className: "lede",
-      text:
-        "Each experiment compares an agent built on the real central-complex wiring with controls " +
-        "that keep the size but scramble the wiring. Every comparison below was fixed in writing " +
-        "before it ran, on seeds never used before. Exploratory research: one model family, " +
-        "small tasks — read the gaps as leads, not conclusions.",
-    }),
+    el(
+      "p",
+      { className: "lede" },
+      "Each experiment compares an agent built on the real central-complex wiring with controls " +
+        "that keep the size but scramble the wiring. The decision rule for every comparison below " +
+        "was fixed before it ran, on seeds never used before. Exploratory research: one model " +
+        "family, small tasks — read the gaps as leads, not conclusions. A follow-up test of flying " +
+        "home over a city map found no advantage for the real wiring: see ",
+      Object.assign(document.createElement("a"), { href: "#/city", textContent: "City" }),
+      ".",
+    ),
     headline(results),
   );
 

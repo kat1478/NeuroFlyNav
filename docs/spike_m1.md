@@ -88,7 +88,10 @@ Reading:
 - Still exploratory: three transforms were compared (no multiple-comparison correction), the CI
   is a normal approximation over 20 seeds, and dynamics/readout are placeholders.
 
-## Pre-registered follow-up: replication and cell-type shuffle (H2), seeds 20–39
+## Pre-registered follow-up: replication and cell-type shuffle, seeds 20–39
+
+Question (the project's hypothesis H2): if the real wiring helps, is it the exact neuron-to-neuron
+map, or only which cell types connect?
 
 The analysis plan (fresh seeds 20–39, `log1p` primary, `binary` secondary, decision rules) was
 fixed before running. New control **TypeShuffledFly** swaps partners only within the same
@@ -118,6 +121,6 @@ PYTHONPATH=src python -m neuroflynav.experiments.run_m1_seeds --first-seed 20 --
 
 ## Next
 
-- A harder task where fine wiring could matter (e.g. path integration with a ring attractor), since type-level structure suffices here.
+- A harder task where fine wiring could matter (e.g. path integration with a ring attractor), since type-level structure suffices here — the heading task (v0.3.0) and homing over a city map (v0.7.0) followed.
 - Coarser groups (cell-type families) to find how much structure is needed.
-- Readout restricted to `PFL` outputs, and real sensory encoding for the ring neurons, are TASK-014 questions.
+- Readout restricted to `PFL` outputs, and real sensory encoding for the ring neurons, are open modelling questions.

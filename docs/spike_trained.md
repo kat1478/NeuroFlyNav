@@ -87,7 +87,8 @@ Reading:
 
 The same experiment on the whole CX subgraph (2,966 neurons, 467,579 edges, 5.3% density
 instead of 26%), run as 100 AWS Batch jobs ([cloud.md](cloud.md)): 100/100 succeeded,
-7.8 job-hours, 3.3 h wall time, an estimated <1 USD (billing data pending). Rule fixed before the run: Fly − RandomMask,
+7.8 job-hours, 3.3 h wall time, 0.63 USD for the day of the run including the pilot (AWS Cost
+Explorer). Rule fixed before the run: Fly − RandomMask,
 paired over seeds, 95% CI > 0.
 
 | Variant | Accuracy | Fly − variant (paired) |

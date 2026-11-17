@@ -6,7 +6,7 @@ a degree-preserving shuffle of it (ShuffledFly), a matched-edge random graph
 readout by imitation, then is evaluated on the hidden-cue task and on a harder
 shorter-cue robustness probe.
 
-This is a NON-AUTHORITATIVE development spike (see private ops D-032). All topology
+This is a NON-AUTHORITATIVE development spike. All topology
 is synthetic and all dynamics/training choices are placeholders. The comparison has
 no statistical or biological interpretation; its purpose is that the machinery runs,
 is reproducible, and *can* distinguish topologies — not that any policy is better.
