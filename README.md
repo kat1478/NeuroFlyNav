@@ -201,6 +201,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
 | [docs/spike_homing.md](docs/spike_homing.md) | Foraging and homing by path integration over central Warsaw, pre-registered result |
+| [docs/report.md](docs/report.md) | Short technical report: question, methods, all results, engineering, limitations |
 | [docs/preregistration.md](docs/preregistration.md) | Decision rules of every pre-registered comparison, with the commit each run used |
 | [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |
 | [docs/app.md](docs/app.md) | The interactive web app: data export, development, deployment |
