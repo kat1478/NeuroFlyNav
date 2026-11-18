@@ -5,6 +5,28 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-11-18
+
+Drop a fly anywhere: the trained whole-CX networks run live in the browser. No new experiments,
+no changed results.
+
+### Added
+- `reporting/export_onnx.py`: exports a trained masked RNN as a one-step ONNX cell with sparse
+  recurrence (Gather → Mul → ScatterElements add, int32 indices, opset 18; 5.8 MB per model);
+  CLI retrains the seed-100 City networks and writes models, `golden.json` and a manifest with
+  SHA-256, parity with PyTorch (agreement 1.0) and accuracy (0.8253 real, 0.8277 random).
+  `onnx` and `onnxruntime` from conda-forge.
+- Models published as the release asset `models-v1` (never in Git); `app/scripts/fetch-models.sh`
+  downloads and verifies them for Pages, `make deploy-aws` and CI.
+- App, City view: **Drop a fly anywhere** — place a nest inside the mapped area (or at a random
+  spot) and let the fly search or pick a treat; both networks run in the browser with ONNX
+  Runtime Web 1.31.1 (WebAssembly, lazy-loaded), progress shown, seed per fly.
+- `app/src/fly/`: TypeScript flight generator, network runner and home-vector maths; Vitest unit
+  tests and a golden test against PyTorch's outputs.
+
+### Fixed
+- CHANGELOG: missing 0.7.0 heading.
+
 ## [0.7.1] — 2026-11-18
 
 Documentation and presentation release: no new experiments, no changed results.
@@ -24,7 +46,7 @@ Documentation and presentation release: no new experiments, no changed results.
 - Docs: infrastructure README covers the web-app mirror; actual cost from AWS Cost Explorer
   (0.63 USD for the day of the whole-CX sweep, pilot included) instead of an estimate; stale
   "next steps" marked done; six CX regions named correctly.
- — 2026-11-17
+## [0.7.0] — 2026-11-17
 
 Fly in the city: a simulated fly forages over central Warsaw (OpenStreetMap) and flies home by
 path integration, using the heading estimated by the trained central-complex network. A
@@ -176,7 +198,8 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
-[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.7.1...develop
+[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.8.0...develop
+[0.8.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.8.0
 [0.7.1]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.1
 [0.7.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.0
 [0.6.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.6.0
