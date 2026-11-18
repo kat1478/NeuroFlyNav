@@ -1,6 +1,6 @@
 ---
 title: "Does fly-brain wiring help an artificial navigation network?"
-subtitle: "NeuroFlyNav — technical report, v0.7.0"
+subtitle: "NeuroFlyNav — technical report, v0.7.1"
 author: "Katarzyna Kadyszewska"
 date: "November 2026"
 ---

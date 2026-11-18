@@ -19,7 +19,7 @@ Warsaw (OpenStreetMap) that flies home by path integration.
 
 <img alt="Animated demo of the City view: a simulated fly searches from its nest in a Warsaw park to a bakery, then two networks fly home — the real fly wiring (thin solid blue line) and a random wiring (wide dashed green line) — and the map zooms in to show how far from the nest each one lands." src="docs/figures/demo-city.gif" width="720">
 
-> **Status: v0.7.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> **Status: v0.7.1, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Model choices
 > (dynamics, inputs, readout) are still exploratory: each comparison's decision rule was fixed
 > before it ran (pre-registered), but no overall protocol is frozen yet. Read the numbers below
