@@ -5,6 +5,11 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+### Fixed
+- `make deploy-aws` uploads the ONNX Runtime `.wasm` and the `.onnx` models pre-gzipped
+  (CloudFront does not compress files over 10 MB or `application/octet-stream`): the first fly on
+  the AWS mirror downloads ~9.8 MB instead of ~26 MB.
+
 ## [0.8.0] — 2026-11-18
 
 Drop a fly anywhere: the trained whole-CX networks run live in the browser. No new experiments,

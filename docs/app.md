@@ -83,4 +83,6 @@ for colour-vision deficiency in light and dark mode; every chart has a table vie
   (`infra/site.tf`; no public bucket, HTTPS only, AWS-managed security headers). After
   `terraform apply`, upload with `conda run -n neuroflynav-app make deploy-aws` (needs
   `aws login --profile neuroflynav` and `AWS_PROFILE=neuroflynav`). The mirror lives on
-  the project's AWS Free plan and is not guaranteed to outlast it.
+  the project's AWS Free plan and is not guaranteed to outlast it. The `.wasm` runtime and
+  the `.onnx` models are uploaded pre-gzipped (`Content-Encoding: gzip`), because CloudFront
+  compresses neither files over 10 MB nor `application/octet-stream`.
