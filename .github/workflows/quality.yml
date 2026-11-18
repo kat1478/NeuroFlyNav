@@ -49,6 +49,11 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-fund --no-audit
 
+      - name: Fetch the trained models for the golden test (release asset)
+        run: scripts/fetch-models.sh models-v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Lint, format, typecheck, test
         run: npm run check
 

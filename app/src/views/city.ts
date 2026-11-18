@@ -13,6 +13,18 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { Protocol } from "pmtiles";
 import { loadCity, loadTreats, type City, type CityFlight } from "../data";
+import {
+  distance,
+  FLIGHT,
+  flyOut,
+  headingSector,
+  landing as landingPoint,
+  sectorCentre,
+  toLocal,
+  toLonLat,
+  type Point,
+} from "../fly/flight";
+import { DOWNLOAD_MB_COMPRESSED, getNetworks, runSectors, type Networks } from "../fly/model";
 import type { Scope } from "../lifecycle";
 import { onScheme, palette, type Palette } from "../theme";
 import { el, pct } from "../ui";
@@ -26,6 +38,31 @@ const BOUNDS: LngLatBoundsLike = [
   [20.992, 52.217],
   [21.048, 52.25],
 ];
+
+/** The area covered by the map data (geo/build_map.py BBOX). */
+const MAPPED: [[number, number], [number, number]] = [
+  [21.0, 52.222],
+  [21.04, 52.245],
+];
+
+/** The mapped area as a closed line, shown while the visitor places a nest. */
+function mappedFrame(): Feature {
+  const [[w, s], [e, n]] = MAPPED;
+  return {
+    type: "Feature",
+    properties: {},
+    geometry: {
+      type: "LineString",
+      coordinates: [
+        [w, s],
+        [e, s],
+        [e, n],
+        [w, n],
+        [w, s],
+      ],
+    },
+  };
+}
 
 let protocolAdded = false;
 
@@ -68,6 +105,7 @@ function baseStyle(url: string, p: Palette, dark: boolean): StyleSpecification {
       },
       trips: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
       treats: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
+      mapped: { type: "geojson", data: mappedFrame() },
     },
     layers: [
       { id: "land", type: "background", paint: { "background-color": c.land } },
@@ -113,6 +151,13 @@ function baseStyle(url: string, p: Palette, dark: boolean): StyleSpecification {
         source: "osm",
         "source-layer": "buildings",
         paint: { "fill-color": c.building, "fill-outline-color": dark ? "#353532" : "#d2d0c6" },
+      },
+      {
+        id: "mapped-edge",
+        type: "line",
+        source: "mapped",
+        layout: { visibility: "none" },
+        paint: { "line-color": p.muted, "line-width": 1.5, "line-dasharray": [3, 2] },
       },
       {
         id: "treats",
@@ -261,7 +306,8 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
       text:
         "Insects that forage keep a running sum of every turn and every stretch they fly — a " +
         "home vector — so they can fly straight back to their nest. Here a simulated fly leaves " +
-        "its nest in Park Świętokrzyski, searches until it smells a real café, bakery or ice-cream " +
+        "its nest (in Park Świętokrzyski, or wherever you drop it), searches until it smells a real " +
+        "café, bakery or ice-cream " +
         "shop from OpenStreetMap, and then flies home. At every step a trained network (the one in the " +
         "Replay view) estimates the fly's compass heading as one of 8 sectors; adding up these " +
         "estimates gives the home vector the fly follows back. Two networks are compared: one " +
@@ -272,6 +318,44 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   const flightButtons = el("div", { className: "segmented" });
   flightButtons.setAttribute("role", "group");
   flightButtons.setAttribute("aria-label", "Flight");
+  const modeSwitch = el("div", { className: "segmented" });
+  modeSwitch.setAttribute("role", "group");
+  modeSwitch.setAttribute("aria-label", "What to show");
+  const dropKind = el("div", { className: "segmented" });
+  dropKind.setAttribute("role", "group");
+  dropKind.setAttribute("aria-label", "How the fly finds a treat");
+  const dropHint = el("p", { className: "drop-hint" });
+  dropHint.setAttribute("aria-live", "polite");
+  // Step-by-step progress is not announced (too chatty); the hint above says when it is done.
+  const dropProgress = el("span", { className: "drop-progress num" });
+  const randomButton = el("button", { className: "link-button", text: "Drop at a random spot" });
+  randomButton.type = "button";
+  const pilotControls = el(
+    "div",
+    { className: "controls" },
+    el("span", { text: "Flight" }),
+    flightButtons,
+  );
+  const dropControls = el(
+    "div",
+    { className: "drop-controls" },
+    el("div", { className: "controls" }, el("span", { text: "The fly" }), dropKind, randomButton),
+    dropHint,
+  );
+  dropControls.hidden = true;
+  const dropNote = el("p", {
+    className: "note",
+    text:
+      "Each fly you drop is a new random flight computed live in your browser, with the same " +
+      "trained networks; a single flight says nothing about which wiring is better (one network " +
+      "can land closer by chance) — the pre-registered test below compares 2,000 flights. In " +
+      `“pick a treat” the turns are gently pulled towards the treat, and a fly that gets no closer ` +
+      `than ${FLIGHT.detectM} m within ${FLIGHT.maxSteps} steps flies home anyway. Place the nest ` +
+      "inside the mapped area. Flies from other nests, and steered flies, tend to be longer than " +
+      "the tested ones (Park Świętokrzyski nest, unsteered search), and longer flights miss " +
+      "the nest by more.",
+  });
+  dropNote.hidden = true;
   const play = el("button", { className: "play" });
   play.type = "button";
   const status = el("span", { className: "step-label" });
@@ -293,7 +377,9 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
       "section",
       { className: "card" },
       el("h2", { text: "One foraging trip" }),
-      el("div", { className: "controls" }, el("span", { text: "Flight" }), flightButtons),
+      el("div", { className: "controls" }, modeSwitch),
+      pilotControls,
+      dropControls,
       el(
         "div",
         { className: "city-layout" },
@@ -303,13 +389,14 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
           mapBox,
           mapError,
           mapSummary,
-          el("div", { className: "player" }, play, status, zoomButton),
+          el("div", { className: "player" }, play, status, dropProgress, zoomButton),
           legend,
         ),
         side,
       ),
+      dropNote,
       el("p", {
-        className: "note",
+        className: "note pilot-note",
         text:
           "An illustration, not a navigation system: the fly flies over buildings, does not see " +
           "the map, and the network reports only 8 heading sectors (45° each), so even perfect " +
@@ -323,7 +410,13 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   const resultCard = el("section", { className: "card" });
   root.append(resultCard);
 
-  let flightIndex = 0;
+  // The flight on screen: one of the pilot flights, or a fly dropped by the visitor.
+  let active: { nest: [number, number]; flight: CityFlight; title: string; live: boolean } = {
+    nest: city.nest,
+    flight: city.flights[0],
+    title: "Flight 1",
+    live: false,
+  };
   let step = 0;
   let returnFraction = 0;
   let playing = !reduceMotion;
@@ -345,10 +438,20 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   });
   map.addControl(new NavigationControl({ showCompass: false }), "top-right");
 
-  new Marker({ element: el("div", { className: "nest-dot" }) }).setLngLat(city.nest).addTo(map);
-  new Marker({ element: marker("nest", "⌂ nest"), anchor: "bottom", offset: [0, -10] })
+  const nestDot = new Marker({ element: el("div", { className: "nest-dot" }) })
     .setLngLat(city.nest)
     .addTo(map);
+  const nestLabel = new Marker({
+    element: marker("nest", "⌂ nest"),
+    anchor: "bottom",
+    offset: [0, -10],
+  })
+    .setLngLat(city.nest)
+    .addTo(map);
+  const placeNest = (lngLat: [number, number]): void => {
+    nestDot.setLngLat(lngLat).addTo(map);
+    nestLabel.setLngLat(lngLat).addTo(map);
+  };
   const treatMarker = new Marker({ element: marker("treat"), anchor: "bottom", offset: [0, -16] });
   const flyMarker = new Marker({ element: flyIcon() });
   // Landing points are often metres from the nest, so their distances are listed in the
@@ -373,14 +476,22 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   }
 
   function flight(): CityFlight {
-    return city.flights[flightIndex];
+    return active.flight;
   }
 
   function drawData(): void {
     const source = map.getSource("trips") as GeoJSONSource | undefined;
     if (!source) return;
     const current = flight();
-    source.setData(tripFeatures(city, current, step, returnFraction, colors(palette())));
+    source.setData(
+      tripFeatures(
+        { ...city, nest: active.nest },
+        current,
+        step,
+        returnFraction,
+        colors(palette()),
+      ),
+    );
     // The single fly is shown while searching; on the way home the two networks' lines take over.
     if (returnFraction > 0) flyMarker.remove();
     else flyMarker.setLngLat(current.path[Math.min(step, current.path.length - 1)]).addTo(map);
@@ -405,7 +516,7 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   function describe(): void {
     const current = flight();
     mapSummary.textContent =
-      `Flight ${flightIndex + 1} from the nest to ` +
+      `${active.title} from the nest to ` +
       `${current.treat ? current.treat.name || `a ${current.treat.kind}` : "no treat"}; ` +
       NETS.map(
         ({ key, short }) =>
@@ -439,12 +550,12 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
       ),
     );
     side.replaceChildren(
-      el("h3", { text: `Flight ${flightIndex + 1}` }),
+      el("h3", { text: active.title }),
       el(
         "div",
         { className: "stats" },
         stat(`${((current.path.length - 1) * city.homing.step_m).toFixed(0)} m`, "flown out"),
-        stat(`${metres(city.nest, end).toFixed(0)} m`, "to the nest"),
+        stat(`${metres(active.nest, end).toFixed(0)} m`, "to the nest"),
         stat(String(current.path.length - 1), "steps"),
       ),
       el("p", {}, el("strong", { text: "Treat: " }), treatText),
@@ -524,7 +635,8 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   }
 
   function selectFlight(i: number): void {
-    flightIndex = i;
+    active = { nest: city.nest, flight: city.flights[i], title: `Flight ${i + 1}`, live: false };
+    placeNest(city.nest);
     step = 0;
     returnFraction = 0;
     buttons.forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
@@ -543,8 +655,8 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
 
   function overview(): void {
     const path = flight().path;
-    const lons = [...path.map((p) => p[0]), city.nest[0]];
-    const lats = [...path.map((p) => p[1]), city.nest[1]];
+    const lons = [...path.map((p) => p[0]), active.nest[0]];
+    const lats = [...path.map((p) => p[1]), active.nest[1]];
     map.fitBounds(
       [
         [Math.min(...lons), Math.min(...lats)],
@@ -556,7 +668,7 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
 
   /** Zoom to the nest and both landing points: errors are metres, the trip hundreds. */
   function nestCloseUp(): void {
-    const points = [city.nest, ...NETS.map(({ key }) => flight().returns[key].landing)];
+    const points = [active.nest, ...NETS.map(({ key }) => flight().returns[key].landing)];
     const lons = points.map((p) => p[0]);
     const lats = points.map((p) => p[1]);
     map.fitBounds(
@@ -633,6 +745,299 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     } else start();
   });
 
+  /* ---------- "Drop a fly": the trained networks run live in the browser ---------- */
+
+  type Mode = "pilot" | "drop";
+  type Kind = "pick" | "search";
+  /** nest: waiting for a nest; treat: waiting for a treat; busy: computing; done: flight shown. */
+  type Phase = "nest" | "treat" | "busy" | "done";
+  let mode: Mode = "pilot";
+  let kind: Kind = "pick";
+  let phase: Phase = "nest";
+  let dropNest: [number, number] | null = null;
+  let runId = 0;
+  let loadedOnce = false;
+  const treatLonLat = treats.features.map((f) => f.geometry.coordinates as Point);
+  const treatIndex = new Map(treats.features.map((f, i) => [f.properties.id, i]));
+  /** A treat further than this cannot be reached within the step limit. */
+  const MAX_TREAT_M = 1400;
+
+  const modeButtons = (
+    [
+      ["pilot", "Pilot flights"],
+      ["drop", "Drop a fly anywhere"],
+    ] as [Mode, string][]
+  ).map(([value, text]) => {
+    const button = el("button", { text });
+    button.type = "button";
+    button.addEventListener("click", () => setMode(value));
+    modeSwitch.append(button);
+    return { value, button };
+  });
+  const kindButtons = (
+    [
+      ["pick", "flies to a treat you pick"],
+      ["search", "searches on its own"],
+    ] as [Kind, string][]
+  ).map(([value, text]) => {
+    const button = el("button", { text });
+    button.type = "button";
+    button.addEventListener("click", () => {
+      kind = value;
+      resetDrop();
+    });
+    dropKind.append(button);
+    return { value, button };
+  });
+  randomButton.addEventListener("click", () => {
+    const [[w, s], [e, n]] = MAPPED;
+    const margin = 0.1;
+    const lngLat: [number, number] = [
+      w + (e - w) * (margin + (1 - 2 * margin) * Math.random()),
+      s + (n - s) * (margin + (1 - 2 * margin) * Math.random()),
+    ];
+    kind = "search";
+    resetDrop();
+    dropNestAt(lngLat);
+  });
+
+  function setMode(next: Mode): void {
+    mode = next;
+    modeButtons.forEach(({ value, button }) =>
+      button.setAttribute("aria-pressed", String(value === mode)),
+    );
+    pilotControls.hidden = mode !== "pilot";
+    dropControls.hidden = mode !== "drop";
+    dropNote.hidden = mode !== "drop";
+    root.querySelectorAll<HTMLElement>(".pilot-note").forEach((n) => (n.hidden = mode !== "pilot"));
+    mapBox.classList.toggle("is-picking", mode === "drop");
+    if (map.getLayer("mapped-edge")) {
+      map.setLayoutProperty("mapped-edge", "visibility", mode === "drop" ? "visible" : "none");
+    }
+    runId++;
+    if (mode === "pilot") {
+      play.hidden = false;
+      selectFlight(0);
+      if (!reduceMotion) start();
+    } else {
+      resetDrop();
+      map.fitBounds(MAPPED, { padding: 30, duration: reduceMotion ? 0 : 700 });
+    }
+  }
+
+  function setBusy(busy: boolean): void {
+    mapBox.setAttribute("aria-busy", String(busy));
+    if (!busy) dropProgress.textContent = "";
+  }
+
+  function resetDrop(): void {
+    runId++;
+    phase = "nest";
+    playing = false;
+    cancelAnimationFrame(frame);
+    setBusy(false);
+    dropNest = null;
+    active = { ...active, live: false };
+    kindButtons.forEach(({ value, button }) =>
+      button.setAttribute("aria-pressed", String(value === kind)),
+    );
+    nestDot.remove();
+    nestLabel.remove();
+    flyMarker.remove();
+    treatMarker.remove();
+    landingMarkers.forEach(({ dot }) => dot.remove());
+    (map.getSource("trips") as GeoJSONSource | undefined)?.setData({
+      type: "FeatureCollection",
+      features: [],
+    });
+    if (map.getLayer("treat-found")) map.setFilter("treat-found", ["==", ["get", "id"], -1]);
+    zoomButton.hidden = true;
+    status.textContent = "";
+    play.hidden = true;
+    mapSummary.textContent = "No fly dropped yet.";
+    dropHint.textContent =
+      "Click anywhere inside the dashed frame to place the nest" +
+      (kind === "pick" ? ", then click a treat (grey dot) for the fly to visit." : ".");
+    side.replaceChildren(
+      el("h3", { text: "Your fly" }),
+      el("p", {
+        text:
+          "Two trained networks — real fly wiring and random wiring, the ones in the Replay view — " +
+          "run here in your browser (ONNX Runtime Web). The first fly downloads them once (about " +
+          `${DOWNLOAD_MB_COMPRESSED} MB compressed).`,
+      }),
+    );
+  }
+
+  function inside([lng, lat]: [number, number]): boolean {
+    const [[w, s], [e, n]] = MAPPED;
+    return lng >= w && lng <= e && lat >= s && lat <= n;
+  }
+
+  /** Place the nest; a searching fly starts at once, a picking fly waits for a treat. */
+  function dropNestAt(lngLat: [number, number]): void {
+    dropNest = lngLat;
+    placeNest(lngLat);
+    if (kind === "search") void launch(-1);
+    else {
+      phase = "treat";
+      dropHint.textContent =
+        "Now click a treat (grey dot) for the fly to visit — or click elsewhere to move the nest.";
+    }
+  }
+
+  /** The treat under the pointer (a small box around it, so the dots are easy to hit). */
+  function treatAt(point: { x: number; y: number }): number {
+    const box = 12;
+    const hits = map.queryRenderedFeatures(
+      [
+        [point.x - box, point.y - box],
+        [point.x + box, point.y + box],
+      ],
+      { layers: ["treats"] },
+    );
+    let best = -1;
+    let bestD = Infinity;
+    for (const hit of hits) {
+      const index = treatIndex.get(hit.properties?.id as number);
+      if (index === undefined) continue;
+      const p = map.project(treatLonLat[index]);
+      const d = Math.hypot(p.x - point.x, p.y - point.y);
+      if (d < bestD) [best, bestD] = [index, d];
+    }
+    return best;
+  }
+
+  async function launch(target: number): Promise<void> {
+    if (!dropNest) return;
+    const nest = dropNest;
+    const id = ++runId;
+    phase = "busy";
+    play.hidden = true;
+    setBusy(true);
+    dropHint.textContent = loadedOnce
+      ? "Computing the flight…"
+      : `Loading the two networks (about ${DOWNLOAD_MB_COMPRESSED} MB compressed, once)…`;
+    const fail = (error: unknown): void => {
+      if (id !== runId || !scope.active) return;
+      console.error(error);
+      setBusy(false);
+      phase = "nest";
+      dropHint.textContent =
+        "Sorry — the networks could not be run in this browser. Check the connection and click " +
+        "the map to try again.";
+    };
+    let loaded: Networks;
+    try {
+      loaded = await getNetworks(import.meta.env.BASE_URL);
+      loadedOnce = true;
+    } catch (error) {
+      fail(error);
+      return;
+    }
+    if (id !== runId || !scope.active) return;
+    dropHint.textContent = "Computing the flight…";
+    const seed = Math.floor(Math.random() * 2 ** 31);
+    const local = treatLonLat.map((t) => toLocal(t, nest));
+    const out = flyOut(local, seed, target);
+    const steps = out.inputs.length;
+    let results: number[][] | null;
+    try {
+      results = await runSectors(
+        loaded,
+        out.inputs,
+        (done, total) => {
+          if (id === runId)
+            dropProgress.textContent = `Heading estimates: step ${done} of ${total}`;
+        },
+        () => id !== runId || !scope.active,
+      );
+    } catch (error) {
+      fail(error);
+      return;
+    }
+    if (id !== runId || !scope.active || results === null) return;
+    const predictedBy = results;
+    const returns = Object.fromEntries(
+      loaded.nets.map((net, i) => {
+        const predicted = predictedBy[i];
+        const land = landingPoint(out.path, predicted.map(sectorCentre));
+        return [
+          net.name,
+          {
+            landing: toLonLat(land, nest),
+            error_m: Math.round(distance(land) * 10) / 10,
+            predicted,
+          },
+        ];
+      }),
+    ) as CityFlight["returns"];
+    const reached = out.treat >= 0 ? treats.features[out.treat].properties : null;
+    setBusy(false);
+    phase = "done";
+    active = {
+      nest,
+      title: `Your fly (seed ${seed})`,
+      live: true,
+      flight: {
+        path: out.path.map((p) => toLonLat(p, nest)),
+        sectors: out.theta.map(headingSector),
+        treat: reached,
+        returns,
+      },
+    };
+    dropHint.textContent =
+      (reached
+        ? `Found ${reached.name || `a ${reached.kind}`} after ${steps} steps (${steps * FLIGHT.stepM} m).`
+        : `No treat within ${FLIGHT.maxSteps} steps — flying home anyway.`) +
+      " Click the map to drop another fly.";
+    play.hidden = false;
+    zoomButton.hidden = false;
+    step = 0;
+    returnFraction = 0;
+    closeUp = false;
+    zoomButton.textContent = "Close-up of the nest";
+    overview();
+    drawSide();
+    describe();
+    if (reduceMotion) {
+      step = out.path.length - 1;
+      returnFraction = 1;
+      drawData();
+    } else start();
+  }
+
+  map.on("click", (event) => {
+    if (mode !== "drop") return;
+    if (phase === "busy") {
+      dropHint.textContent = "Still computing this fly — one moment…";
+      return;
+    }
+    const lngLat: [number, number] = [event.lngLat.lng, event.lngLat.lat];
+    if (phase === "treat" && dropNest) {
+      const index = treatAt(event.point);
+      if (index >= 0) {
+        if (metres(dropNest, treatLonLat[index]) > MAX_TREAT_M) {
+          dropHint.textContent =
+            `That treat is more than ${(MAX_TREAT_M / 1000).toFixed(1)} km from the nest — the ` +
+            "fly would run out of steps. Pick a closer one.";
+          return;
+        }
+        if (map.getLayer("treat-found")) {
+          map.setFilter("treat-found", ["==", ["get", "id"], treats.features[index].properties.id]);
+        }
+        void launch(index);
+        return;
+      }
+    }
+    if (!inside(lngLat)) {
+      dropHint.textContent = "Place the nest inside the dashed frame (where the map is drawn).";
+      return;
+    }
+    if (phase === "done" || phase === "treat") resetDrop();
+    dropNestAt(lngLat);
+  });
+
   const keyItem = (sample: HTMLElement, text: string): HTMLElement =>
     el("span", { className: "key-item" }, sample, el("span", { text }));
   legend.replaceChildren(
@@ -654,8 +1059,7 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
 
   map.on("load", () => {
     (map.getSource("treats") as GeoJSONSource).setData(treats as unknown as FeatureCollection);
-    selectFlight(0);
-    if (playing) start();
+    setMode("pilot");
   });
 
   const restyle = (): void => {
@@ -673,12 +1077,15 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     map.setPaintProperty("treat-found", "circle-color", p.ink);
     map.setPaintProperty("treat-found", "circle-stroke-color", p.surface);
     map.setPaintProperty("outbound", "line-color", p.ink);
+    map.setPaintProperty("mapped-edge", "line-color", p.muted);
+    if (mode === "drop" && !active.live) return; // nothing drawn yet
     drawSide();
     stepView();
   };
   const stopScheme = onScheme(restyle);
   drawResult();
   scope.onLeave(() => {
+    runId++;
     cancelAnimationFrame(frame);
     stopScheme();
     map.remove();
