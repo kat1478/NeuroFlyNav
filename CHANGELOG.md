@@ -5,6 +5,12 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+### Added
+- `.github/workflows/image.yml`: GitHub Actions builds the job image and publishes it to
+  `ghcr.io/kat1478/neuroflynav:<sha12>` with the built-in token (no AWS access, no stored keys).
+- Terraform `image_repository` variable: the job definition can use the GHCR image
+  (default unchanged: the project ECR repository).
+
 ### Changed
 - `docs/report.md` updated for v0.8.0: the trained networks in the browser (ONNX export, parity,
   ONNX Runtime Web), test counts, next steps.

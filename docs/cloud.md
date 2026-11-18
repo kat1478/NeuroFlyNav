@@ -29,6 +29,28 @@ Smoke check (2026-11-15): the container result for `FlyConnectome`, seed 100, co
 equals the local run exactly. Image size 3.4 GB (PyTorch CPU + dev tools); first build
 ~12 min, later builds reuse the cached environment layer.
 
+## Image from GitHub Actions
+
+Every push to `develop` that changes the image (code, `environment.yml`, `Dockerfile`, entrypoint)
+runs [`.github/workflows/image.yml`](../.github/workflows/image.yml): it builds the image with Docker
+Buildx (layers cached between runs) and publishes it to GitHub Container Registry as
+`ghcr.io/kat1478/neuroflynav:<12-character commit SHA>` (plus `:develop`). The workflow uses only the
+built-in `GITHUB_TOKEN`; it has no AWS access and no stored keys. The package is public, so Batch
+pulls it without credentials; the image holds only the public code, the conda environment and the
+treat locations (no connectome data). Pull requests that touch the image build it without pushing.
+
+To run a sweep from that image, point the job definition at it and submit as below:
+
+```bash
+SHA=$(git rev-parse --short=12 origin/develop)     # a commit the workflow has built
+terraform -chdir=infra apply -var image_repository=ghcr.io/kat1478/neuroflynav -var image_tag="$SHA"
+```
+
+Why not let GitHub Actions submit the jobs too? That needs GitHub's OpenID Connect identity
+provider in the AWS account (short-lived credentials, no keys), and the AWS project account's
+organization policy forbids creating one. Long-lived access keys in GitHub were rejected, so
+submission stays a local, deliberate step. Building locally and pushing to ECR (below) still works.
+
 ## Running a sweep on AWS Batch
 
 Prerequisites: the Terraform stack in `infra/` is applied, and the AWS CLI is logged in
