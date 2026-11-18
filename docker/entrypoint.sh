@@ -4,7 +4,7 @@
 # Job choice (one of):
 #   AWS_BATCH_JOB_ARRAY_INDEX (set by AWS Batch for array jobs) + FIRST_SEED
 #   VARIANT + SEED
-# Optional: MODULE (run_trained, default, or run_homing), EXTRA_ARGS (e.g. "--core --steps 5"),
+# Optional: MODULE (run_trained, default, run_homing or run_homevector), EXTRA_ARGS (e.g. "--core --steps 5"),
 # BUCKET + RUN_ID (upload result to S3).
 set -euo pipefail
 
@@ -30,7 +30,7 @@ output="results/${name}.json"
 
 module="${MODULE:-run_trained}"
 case "$module" in
-    run_trained | run_homing) ;;
+    run_trained | run_homing | run_homevector) ;;
     *) echo "unknown MODULE: $module" >&2; exit 2 ;;
 esac
 
