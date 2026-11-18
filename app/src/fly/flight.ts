@@ -94,6 +94,12 @@ export function flyOut(treats: Point[], seed: number, target = -1): Flight {
   return { inputs, theta: thetas, path, treat: found };
 }
 
+/** Heading sector of an angle, as `neuroflynav.tasks.heading.heading_sector` (clamped). */
+export function headingSector(theta: number): number {
+  const wrapped = ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.min(Math.floor(wrapped / ((2 * Math.PI) / FLIGHT.sectors)), FLIGHT.sectors - 1);
+}
+
 export const sectorCentre = (sector: number): number =>
   ((sector + 0.5) * 2 * Math.PI) / FLIGHT.sectors;
 
