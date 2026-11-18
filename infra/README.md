@@ -10,7 +10,7 @@ Everything the cloud sweeps and the web-app mirror need, in one AWS project (eu-
 | `iam.tf` | Execution role (pull image, write logs) and job role (`s3:PutObject` on `runs/*` only) |
 | `batch.tf` | Security group (outbound only), Fargate Spot compute environment (max 12 vCPU, scales to zero), job queue, job definition (4 vCPU, 8 GB, 3 h timeout, retry only on Spot interruption) |
 | `site.tf` | Web-app mirror: private S3 site bucket, CloudFront distribution with Origin Access Control, HTTPS only, AWS-managed caching and security-header policies |
-| `variables.tf`, `outputs.tf`, `versions.tf` | Inputs (`image_tag`, `budget_email`, sizes), outputs (bucket, ECR URL, queue, job definition, site URL), provider and default tags |
+| `variables.tf`, `outputs.tf`, `versions.tf` | Inputs (`image_tag`, `image_repository`, `budget_email`, sizes), outputs (bucket, ECR URL, queue, job definition, site URL), provider and default tags |
 
 All resources carry the tags `project=neuroflynav` and `managed_by=terraform`.
 State is local and gitignored; nothing secret is committed.
