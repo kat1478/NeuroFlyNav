@@ -125,6 +125,48 @@ def train_model(
     return model
 
 
+def train_regression(
+    graph: Graph,
+    train_data: tuple[FloatArray, FloatArray],
+    scored: Sequence[bool],
+    config: TrainingConfig,
+    seed: int,
+) -> MaskedRateRNN:
+    """Like :func:`train_model`, but the readout reports real values (mean squared error).
+
+    ``train_data`` is ``(inputs, targets)`` with targets ``(sequences, steps, outputs)``.
+    Same model, initialisation, batches and budget as the classification path.
+    """
+    torch.manual_seed(seed)
+    generator = np.random.default_rng(seed)
+    inputs, targets = (torch.tensor(a).float() for a in train_data)
+    mask = torch.tensor(np.asarray(scored, dtype=bool))
+    model = MaskedRateRNN(graph, inputs.shape[2], targets.shape[2], config)
+    optimizer = torch.optim.Adam(
+        [p for p in model.parameters() if p.requires_grad], lr=config.learning_rate
+    )
+    for _ in range(config.steps):
+        batch = torch.tensor(
+            generator.choice(
+                len(inputs), size=min(config.batch_size, len(inputs)), replace=False
+            )
+        )
+        outputs = model(inputs[batch])[:, mask]
+        loss = torch.nn.functional.mse_loss(outputs, targets[batch][:, mask])
+        optimizer.zero_grad()
+        loss.backward()  # type: ignore[no-untyped-call]
+        optimizer.step()
+    return model
+
+
+def predict_values(model: MaskedRateRNN, inputs: FloatArray) -> FloatArray:
+    """Readout values per sequence and step, shape ``(sequences, steps, outputs)``."""
+    with torch.no_grad():
+        values = model(torch.tensor(inputs).float())
+    out: FloatArray = values.numpy().astype(np.float64)
+    return out
+
+
 def predict(model: MaskedRateRNN, inputs: FloatArray) -> NDArray[np.int64]:
     """Predicted class per sequence and step, shape ``(sequences, steps)``."""
     with torch.no_grad():
