@@ -17,6 +17,7 @@
   "dependencies": {
     "@observablehq/plot": "0.6.19",
     "maplibre-gl": "6.16.0",
+    "onnxruntime-web": "1.31.1",
     "pmtiles": "4.5.0"
   },
   "devDependencies": {

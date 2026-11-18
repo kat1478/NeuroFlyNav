@@ -35,6 +35,11 @@ jobs:
           environment-file: app/environment.yml
           cache-environment: false
 
+      - name: Fetch the trained models (release asset, checksum verified)
+        run: scripts/fetch-models.sh models-v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Install, check and build
         run: |
           npm ci --no-fund --no-audit
