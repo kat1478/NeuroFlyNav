@@ -5,7 +5,26 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
-## [0.7.0] — 2026-11-17
+## [0.7.1] — 2026-11-18
+
+Documentation and presentation release: no new experiments, no changed results.
+
+### Added
+- README for first-time visitors: live-app link with an animated demo of the City view, a
+  "What this project demonstrates" table linking each skill to code, and two Mermaid architecture
+  diagrams (science pipeline, delivery pipeline); "How it works" covers all models, tasks and controls.
+- `docs/preregistration.md`: the design and decision rule of all eight pre-registered comparisons,
+  with the public commit each run used.
+- `docs/report.md`: a short technical report (PDF attached to this release).
+
+### Fixed
+- Public code and docs no longer refer to private planning notes.
+- CHANGELOG: missing 0.6.0 heading and link references.
+- `geo/environment.yml` now includes `osmium-tool`, required by the map build.
+- Docs: infrastructure README covers the web-app mirror; actual cost from AWS Cost Explorer
+  (0.63 USD for the day of the whole-CX sweep, pilot included) instead of an estimate; stale
+  "next steps" marked done; six CX regions named correctly.
+ — 2026-11-17
 
 Fly in the city: a simulated fly forages over central Warsaw (OpenStreetMap) and flies home by
 path integration, using the heading estimated by the trained central-complex network. A
@@ -30,7 +49,7 @@ pre-registered test finds **no homing advantage** of the real wiring over a rand
 - Independent science review (re-aggregated 100 jobs) and UI/UX audit of the City view; all
   findings fixed.
 
- — 2026-11-16
+## [0.6.0] — 2026-11-16
 
 Interactive results explorer (start of M4): a static web app with the pre-registered results,
 the central-complex wiring and a replay of the heading task, published on GitHub Pages and
@@ -120,7 +139,7 @@ not the wiring or the signs, as the current limit.
 
 ## [0.2.0] — 2026-10-21
 
-First answer to H2: on the hidden-cue task, the edge of the real CX wiring over a
+First answer to H2 (exact wiring vs cell-type structure): on the hidden-cue task, the edge of the real CX wiring over a
 degree-preserving shuffle replicates on fresh seeds and is explained by cell-type structure.
 
 ### Added
@@ -157,6 +176,11 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
+[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.7.1...develop
+[0.7.1]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.1
+[0.7.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.0
+[0.6.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.6.0
+[0.5.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.5.0
 [0.4.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.4.0
 [0.3.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.3.0
 [0.2.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.2.0

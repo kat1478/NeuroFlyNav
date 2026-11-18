@@ -1,4 +1,4 @@
-"""Heading integration with recurrent weights trained on a graph mask (exploratory, TASK-014).
+"""Heading integration with recurrent weights trained on a graph mask (exploratory).
 
 Every graph gets the same model and the same training budget; only the mask (which edges
 exist) differs:

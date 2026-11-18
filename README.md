@@ -12,40 +12,80 @@ of a navigation agent. It then compares that agent against fair controls: the sa
 shuffled, a random network of the same size, and a network with no memory at all. Biological
 topology is a hypothesis to test, not an assumption; a negative result is a valid outcome.
 
-> **Status: v0.7.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
-> neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Dynamics,
-> inputs and readout are placeholders, and no experiment has been frozen yet. Numbers below
-> are first looks (most of them pre-registered), not a scientific claim.
+**▶ Live app: [kat1478.github.io/NeuroFlyNav](https://kat1478.github.io/NeuroFlyNav/)** — every
+pre-registered comparison seed by seed, the central-complex wiring with a glossary of its cell
+types, a step-by-step replay of a network keeping track of heading, and a fly foraging over central
+Warsaw (OpenStreetMap) that flies home by path integration.
 
-**Explore the results interactively: [kat1478.github.io/NeuroFlyNav](https://kat1478.github.io/NeuroFlyNav/)**
-— every pre-registered comparison seed by seed, the central-complex wiring with a glossary of its
-cell types, a step-by-step replay of a network keeping track of heading, and a fly foraging over
-central Warsaw (OpenStreetMap) that flies home by path integration.
+<img alt="Animated demo of the City view: a simulated fly searches from its nest in a Warsaw park to a bakery, then two networks fly home — the real fly wiring (thin solid blue line) and a random wiring (wide dashed green line) — and the map zooms in to show how far from the nest each one lands." src="docs/figures/demo-city.gif" width="720">
+
+> **Status: v0.7.1, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Model choices
+> (dynamics, inputs, readout) are still exploratory: each comparison's decision rule was fixed
+> before it ran (pre-registered), but no overall protocol is frozen yet. Read the numbers below
+> as leads, not settled scientific claims.
+
+## What this project demonstrates
+
+| Area | What | Where |
+| --- | --- | --- |
+| Research design | Hypotheses with fair controls, decision rules fixed before each run ([published here](docs/preregistration.md)), fresh seeds, paired 95% CIs, negative results reported as such | [docs/](docs/), results below |
+| Machine learning | Reservoir computing; recurrent networks whose weights live only on connectome edges, trained with backpropagation through time (PyTorch) | [`training/`](src/neuroflynav/training/), [`agent/`](src/neuroflynav/agent/) |
+| Data engineering | Public connectome export → typed graph with checksums; OpenStreetMap extract → vector tiles of Warsaw | [`graph/hemibrain.py`](src/neuroflynav/graph/hemibrain.py), [`geo/`](geo/) |
+| Software engineering | Typed Python (mypy strict), 81 + 13 automated tests, ruff, CI on every pull request, semantic-versioned releases | [`tests/`](tests/), [CI](.github/workflows/quality.yml), [CHANGELOG](CHANGELOG.md) |
+| Cloud / MLOps | Docker image in ECR, 100-job sweeps on AWS Batch (Fargate Spot), S3, least-privilege IAM, budget alerts, all in Terraform | [`infra/`](infra/README.md), [docs/cloud.md](docs/cloud.md) |
+| Frontend / data visualisation | Vite + TypeScript, Observable Plot, MapLibre with self-hosted PMTiles, light/dark, WCAG AA contrast and ARIA, fixes from independent UI/UX audits; GitHub Pages + CloudFront | [`app/`](app/), [docs/app.md](docs/app.md) |
+
+## How it works
+
+**Question.** Does the real wiring help, compared with the same network rewired (keeping each
+neuron's number of connections), rewired only within cell types, or wired at random with the
+same number of connections? And if it helps, is it the exact neuron-to-neuron map or only which
+cell types connect?
+
+```mermaid
+flowchart LR
+    A["hemibrain v1.2<br/>connectome (CC BY)"] --> B["CX subgraph<br/>2,966 neurons · 467,579 edges"]
+    B --> C["Models<br/>frozen reservoir + readout<br/>masked RNN trained with BPTT"]
+    B --> K["Controls<br/>degree-shuffled · type-shuffled<br/>random · frozen · no memory"]
+    C --> T["Tasks<br/>hidden cue · heading · homing"]
+    K --> T
+    T --> S["Pre-registered statistics<br/>20 fresh seeds · paired 95% CI"]
+    S --> R["Docs, figures<br/>and web app"]
+```
+
+```mermaid
+flowchart LR
+    G["git commit"] --> CI["GitHub Actions<br/>tests · lint · types · app build"]
+    G --> D["Docker image<br/>(tag = commit)"] --> E["Amazon ECR"] --> BT["AWS Batch array job<br/>Fargate Spot, 100 jobs"]
+    BT --> S3["S3 results"] --> AG["aggregate + checks"]
+    CI --> P["GitHub Pages"]
+    AG --> APP["app data"] --> P
+    APP --> CF["S3 + CloudFront mirror"]
+```
+
+1. **Graph** — every neuron with at least one synapse in the six CX regions (AB left and right,
+   EB, FB, NO, PB), and every directed connection between them (`neuroflynav.graph.hemibrain`).
+2. **Models** — a fixed *reservoir* (the wiring as a frozen weight matrix, observations entering at
+   the ring neurons, only a linear readout learned; `neuroflynav.agent.reservoir`) and a *masked
+   RNN* in which every connectome edge carries a weight learned by backpropagation through time,
+   and missing edges stay zero (`neuroflynav.training.masked_rnn`).
+3. **Tasks** — remember a briefly shown goal in a grid world (`neuroflynav.env.nav_memory`); keep
+   track of heading from self-motion between landmarks (`neuroflynav.tasks.heading`); fly home from
+   a foraging trip by adding up the heading estimates (`neuroflynav.tasks.homing`).
+4. **Controls** — `ShuffledFly` (degree-preserving rewiring), `TypeShuffledFly` (rewiring within
+   cell types), `RandomRecurrent` / `RandomMask` (random wiring with the same number of edges, for
+   the reservoir and the trained network respectively), `FrozenFly` (real wiring, recurrent
+   weights not trained), `Reactive` (no memory).
+5. **Statistics** — every variant sees the same data and budget; differences are paired within
+   each seed over 20 fresh seeds, with 95% confidence intervals.
+
+## Results at a glance
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/cx-wiring-dark.png">
   <img alt="Heatmap of synapse counts between cell-type families of the fly central complex; dense blocks within the compass (ER, EPG, PEN, Δ7) and within the fan-shaped body (PFN, hΔ, vΔ, FC, FB)." src="docs/figures/cx-wiring-light.png" width="100%">
 </picture>
-
-## How it works
-
-```
-hemibrain v1.2 connectome ──► CX subgraph ──► frozen recurrent "reservoir" ──► linear readout ──► action
- (public export, CC BY)       6 CX regions     W scaled to spectral radius 1.1    trained by
-                              weight ≥ 1        state = tanh(W·state + input)      imitation (ridge)
-```
-
-1. **Graph** — every neuron with at least one synapse in the six CX regions (AB, EB, FB, NO,
-   PB), and every directed connection between them (`neuroflynav.graph.hemibrain`).
-2. **Reservoir** — the wiring becomes a fixed weight matrix; observations enter at the ring
-   neurons (`ER*`), the state evolves through the real connections (`neuroflynav.agent.reservoir`).
-3. **Task** — a grid world where the goal direction is shown only for the first few steps, so
-   the agent must *remember* it (`neuroflynav.env.nav_memory`).
-4. **Training** — only the readout is learned, by imitating an expert (`neuroflynav.training`).
-5. **Controls** — `ShuffledFly` (degree-preserving rewiring), `TypeShuffledFly` (rewiring within
-   cell types), `RandomRecurrent` (matched edge count), `Reactive` (no memory).
-
-## Results at a glance
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/results-forest-dark.png">
@@ -100,8 +140,8 @@ and with scarce data even slightly better (−2.4 points for the real mask, pre-
 The compass core is dense (26% of all possible connections). On the **whole CX** (5.3%), run as
 100 cloud jobs, the picture changes: the real wiring trains better than a random mask of the
 same size (**+2.8 points [+2.1, +3.6]**, the pre-registered test) and than a degree-preserving
-shuffle (+3.7). Shuffling within cell types costs only +1.1, so cell-type structure
-carries most of the advantage. One task, one model, one training budget — a lead, not a
+shuffle (+3.7). The real wiring is only +1.1 ahead of a within-cell-type shuffle, so cell-type
+structure carries most of the advantage. One task, one model, one training budget — a lead, not a
 conclusion. See [docs/spike_trained.md](docs/spike_trained.md).
 
 Does that heading edge help a fly **get home**? A follow-up flies the same trained networks on
@@ -127,9 +167,9 @@ git commit ──► Docker image ──► Amazon ECR ──► AWS Batch array
   CloudWatch logs and a cost budget with alerts.
 - **Reproducible** — the image is tagged with the git commit; the container downloads the
   public connectome and checks its SHA-256; a pilot job matched the local result exactly.
-- **Measured** — 100/100 jobs succeeded, 7.8 job-hours in 3.3 h wall time, an estimated <1 USD
-  (Fargate Spot list price; billing data pending);
-  idle cost is near zero because Fargate scales to zero.
+- **Measured** — 100/100 jobs succeeded, 7.8 job-hours in 3.3 h wall time; the day of the run
+  (sweep plus pilot) cost 0.63 USD in AWS Cost Explorer; idle cost is near zero because Fargate
+  scales to zero.
 
 How to run it: [docs/cloud.md](docs/cloud.md).
 
@@ -161,6 +201,8 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
 | [docs/spike_homing.md](docs/spike_homing.md) | Foraging and homing by path integration over central Warsaw, pre-registered result |
+| [docs/report.md](docs/report.md) | Short technical report: question, methods, all results, engineering, limitations |
+| [docs/preregistration.md](docs/preregistration.md) | Decision rules of every pre-registered comparison, with the commit each run used |
 | [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |
 | [docs/app.md](docs/app.md) | The interactive web app: data export, development, deployment |
 | [infra/README.md](infra/README.md) | Terraform stack for the cloud runs |

@@ -10,3 +10,4 @@ dependencies:
   - osmnx
   - geopandas
   - tippecanoe
+  - osmium-tool
