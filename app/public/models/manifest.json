@@ -1,0 +1,26 @@
+{
+  "seed": 100,
+  "graph": "hemibrain v1.2 CX subgraph (whole CX), log1p weights",
+  "nodes": 2966,
+  "edges": 467579,
+  "license": "Derived from hemibrain v1.2 (Janelia FlyEM, Scheffer et al. 2020), CC BY 4.0",
+  "inputs": "state (1, nodes), input (1, 5); outputs next_state, logits (1, 8)",
+  "models": {
+    "fly": {
+      "variant": "FlyConnectome",
+      "file": "fly.onnx",
+      "bytes": 5778360,
+      "sha256": "38ac14911fafa0f1755e2ba2261d31e2b8119f80fc1e9e0a9ccf04cae6f8916a",
+      "agreement_with_pytorch": 1.0,
+      "accuracy_onnx": 0.8253
+    },
+    "random": {
+      "variant": "RandomMask",
+      "file": "random.onnx",
+      "bytes": 5778360,
+      "sha256": "360aa40eead3e6eda94dfbbb57562389a77d9a22029092025586910f89538997",
+      "agreement_with_pytorch": 1.0,
+      "accuracy_onnx": 0.8277
+    }
+  }
+}
