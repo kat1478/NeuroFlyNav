@@ -38,6 +38,7 @@ tfplan
 # Web app
 app/node_modules/
 app/dist/
+app/dist-aws/
 
 # Trained ONNX models: release asset only (D-040); the manifest is committed
 app/public/models/*.onnx
