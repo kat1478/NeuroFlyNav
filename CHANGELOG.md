@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+### Changed
+- `docs/report.md` updated for v0.8.0: the trained networks in the browser (ONNX export, parity,
+  ONNX Runtime Web), test counts, next steps.
+
 ### Fixed
 - `make deploy-aws` uploads the ONNX Runtime `.wasm` and the `.onnx` models pre-gzipped
   (CloudFront does not compress files over 10 MB or `application/octet-stream`): the first fly on

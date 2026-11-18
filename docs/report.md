@@ -1,6 +1,6 @@
 ---
 title: "Does fly-brain wiring help an artificial navigation network?"
-subtitle: "NeuroFlyNav — technical report, v0.7.1"
+subtitle: "NeuroFlyNav — technical report, v0.8.0"
 author: "Katarzyna Kadyszewska"
 date: "November 2026"
 ---
@@ -15,7 +15,8 @@ including a within-cell-type shuffle (+1.1 points), and tracks heading **+2.8 pe
 better than a random wiring of the same size (95% CI +2.1 to +3.6). That small edge does not
 carry over to a harder use of the same estimate: flying home after foraging over a map of Warsaw
 (**−1.2 m** [−4.1, +1.7], no advantage). Large sweeps ran as containerised AWS Batch jobs defined in
-Terraform; the results are browsable in a public web app. Code, data provenance and all decision rules
+Terraform; the results are browsable in a public web app, where visitors can also drop their own
+fly on the map and watch the two trained networks fly it home, computed live in the browser. Code, data provenance and all decision rules
 are public. Everything here is exploratory.
 
 Live app: <https://kat1478.github.io/NeuroFlyNav/> · Code: <https://github.com/kat1478/NeuroFlyNav>
@@ -95,7 +96,7 @@ but heading errors accumulate along a flight; a 1.7-point gap in heading accurac
 # 5. Engineering
 
 - **Code:** typed Python package (mypy strict), one `Graph` interface shared by every data source, task
-  and model; 81 Python and 13 TypeScript tests; ruff; CI on every pull request; semantic-versioned
+  and model; 83 Python and 19 TypeScript tests; ruff; CI on every pull request; semantic-versioned
   releases with a changelog; a provenance command captures commit, package versions and environment
   hash, cloud images are tagged with the git commit, and the run commits are listed with the
   pre-registered rules.
@@ -108,6 +109,14 @@ but heading errors accumulate along a flight; a 1.7-point gap in heading accurac
 - **Web app:** static, no server: Python precomputes small JSON files; Vite + TypeScript, Observable Plot
   for charts, MapLibre with a self-hosted PMTiles map; light/dark, WCAG AA contrast, ARIA, reduced
   motion; independent UI/UX audits before release; GitHub Pages plus an S3 + CloudFront mirror.
+- **Model in the browser:** the two trained whole-CX networks are exported to ONNX as a one-step cell
+  that keeps the recurrence sparse (gather the state at each edge's source, multiply by the weight,
+  scatter-add at the target; int32 indices, 5.8 MB per model instead of a dense 2,966 × 2,966
+  matrix). The exported cells agree with PyTorch at every step (agreement 1.0; a golden test checks
+  the browser code path in CI) and run with ONNX Runtime Web in WebAssembly, single-threaded, about
+  10 ms per step for both networks, loaded only when a visitor drops a fly (~9 MB compressed). The
+  models carry neuron-level connectivity, so they are published as a checksummed release asset,
+  not committed to Git.
 
 # 6. Limitations
 
@@ -121,8 +130,7 @@ rules were recorded in project notes rather than an external registry.
 
 Let the network itself compute the home vector, so that the fan-shaped body's wiring (PFN, hΔ neurons)
 can matter; test a random mask with matched degree distribution (are hub neurons what limits learning?);
-freeze a protocol and run a one-shot held-out confirmation; deploy the trained network in the browser
-so visitors can launch their own flights.
+freeze a protocol and run a one-shot held-out confirmation.
 
 # References
 
