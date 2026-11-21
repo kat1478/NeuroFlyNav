@@ -5,6 +5,12 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-11-21
+
+The network computes the home vector itself: pre-registered, the real central-complex wiring
+computes a better home vector than a random wiring of the same size. The job image is now built by
+GitHub Actions.
+
 ### Added
 - Home-vector task (`tasks/homevector.py`, `run_homevector`, `aggregate_homevector`): the network
   reports where the nest is at every step (regression readout). Pre-registered result on seeds 80–99
@@ -220,7 +226,8 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
-[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.8.0...develop
+[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.9.0...develop
+[0.9.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.9.0
 [0.8.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.8.0
 [0.7.1]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.1
 [0.7.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.0

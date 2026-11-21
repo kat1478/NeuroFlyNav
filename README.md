@@ -20,7 +20,7 @@ map: the two trained 2,966-neuron networks (real and random wiring) run live in 
 
 <img alt="Animated demo of the City view: a simulated fly searches from its nest in a Warsaw park to a bakery, then two networks fly home — the real fly wiring (thin solid blue line) and a random wiring (wide dashed green line) — and the map zooms in to show how far from the nest each one lands." src="docs/figures/demo-city.gif" width="720">
 
-> **Status: v0.8.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> **Status: v0.9.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Model choices
 > (dynamics, inputs, readout) are still exploratory: each comparison's decision rule was fixed
 > before it ran (pre-registered), but no overall protocol is frozen yet. Read the numbers below
@@ -33,8 +33,8 @@ map: the two trained 2,966-neuron networks (real and random wiring) run live in 
 | Research design | Hypotheses with fair controls, decision rules fixed before each run ([published here](docs/preregistration.md)), fresh seeds, paired 95% CIs, negative results reported as such | [docs/](docs/), results below |
 | Machine learning | Reservoir computing; recurrent networks whose weights live only on connectome edges, trained with backpropagation through time (PyTorch) | [`training/`](src/neuroflynav/training/), [`agent/`](src/neuroflynav/agent/) |
 | Data engineering | Public connectome export → typed graph with checksums; OpenStreetMap extract → vector tiles of Warsaw | [`graph/hemibrain.py`](src/neuroflynav/graph/hemibrain.py), [`geo/`](geo/) |
-| Software engineering | Typed Python (mypy strict), 83 + 19 automated tests, ruff, CI on every pull request, semantic-versioned releases | [`tests/`](tests/), [CI](.github/workflows/quality.yml), [CHANGELOG](CHANGELOG.md) |
-| Cloud / MLOps | Docker image in ECR, 100-job sweeps on AWS Batch (Fargate Spot), S3, least-privilege IAM, budget alerts, all in Terraform | [`infra/`](infra/README.md), [docs/cloud.md](docs/cloud.md) |
+| Software engineering | Typed Python (mypy strict), 91 + 19 automated tests, ruff, CI on every pull request, semantic-versioned releases | [`tests/`](tests/), [CI](.github/workflows/quality.yml), [CHANGELOG](CHANGELOG.md) |
+| Cloud / MLOps | Docker image built by GitHub Actions (GHCR, no stored keys) or pushed to ECR, 100-job sweeps on AWS Batch (Fargate Spot), S3, least-privilege IAM, budget alerts, all in Terraform | [`infra/`](infra/README.md), [docs/cloud.md](docs/cloud.md) |
 | Model deployment | Trained PyTorch networks exported to ONNX (sparse recurrence with Gather/ScatterElements, int32 indices, 5.8 MB each), golden parity tests (100 % agreement), ONNX Runtime Web (WebAssembly) lazy-loaded in the browser; models shipped as a checksummed release asset | [`export_onnx.py`](src/neuroflynav/reporting/export_onnx.py), [`app/src/fly/`](app/src/fly/) |
 | Frontend / data visualisation | Vite + TypeScript, Observable Plot, MapLibre with self-hosted PMTiles, light/dark, WCAG AA contrast and ARIA, fixes from independent UI/UX audits; GitHub Pages + CloudFront | [`app/`](app/), [docs/app.md](docs/app.md) |
 
