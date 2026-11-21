@@ -136,7 +136,7 @@ def test_city_converts_flights_and_checks_they_match() -> None:
 
 def test_homevector_block_keeps_only_displayed_fields() -> None:
     estimate = {"mean": 1.0, "low": 0.5, "high": 1.5}
-    summary = {
+    summary: dict[str, object] = {
         "seeds": list(range(80, 100)),
         "mean_error_m": {"FlyConnectome": estimate},
         "mean_along_error_m": {"FlyConnectome": estimate},
@@ -167,4 +167,3 @@ def test_committed_city_homevector_matches_its_fields() -> None:
     assert block["fly_minus_error_m"]["RandomMask"]["mean"] == pytest.approx(
         fly - random, abs=1e-9
     )
-
