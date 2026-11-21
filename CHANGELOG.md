@@ -16,6 +16,7 @@ All notable changes to this project are documented here. Versions follow
   (default unchanged: the project ECR repository).
 
 ### Changed
+- `docs/report.md` updated for v0.9.0: home-vector result (task 4, row 9, reading, limitations).
 - `docs/report.md` updated for v0.8.0: the trained networks in the browser (ONNX export, parity,
   ONNX Runtime Web), test counts, next steps.
 
