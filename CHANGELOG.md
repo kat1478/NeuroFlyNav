@@ -18,6 +18,7 @@ All notable changes to this project are documented here. Versions follow
 ### Changed
 - App, City view: new card with the pre-registered home-vector result (verdict, chart of real minus
   each control with 95% CI, table, caveats); `app_data --homevector` exports it into `city.json`.
+- `docs/report.md` updated for v0.9.0: home-vector result (task 4, row 9, reading, limitations).
 - `docs/report.md` updated for v0.8.0: the trained networks in the browser (ONNX export, parity,
   ONNX Runtime Web), test counts, next steps.
 
