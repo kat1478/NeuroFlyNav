@@ -70,6 +70,10 @@ interface Point {
 function chart(points: Point[], p: Palette, width: number): Element {
   const narrow = width < 560;
   return Plot.plot({
+    ariaLabel: "Real wiring minus each control, homing error in metres",
+    ariaDescription: points
+      .map((d) => `${NAME[d.variant]}: ${signed(d.mean)} m [${signed(d.low)}, ${signed(d.high)}]`)
+      .join("; "),
     style: { background: "transparent", color: p.ink2, fontSize: "12px", overflow: "visible" },
     width,
     height: points.length * (narrow ? 64 : 48) + 70,
@@ -145,19 +149,28 @@ function chart(points: Point[], p: Palette, width: number): Element {
   });
 }
 
-/** Build the card, append it to `parent` and keep it in sync with width and colour scheme. */
-export function homeVectorCard(parent: HTMLElement, hv: HomeVector, scope: Scope): void {
+/** Build the card, append it to `parent` and keep it in sync with width and colour scheme.
+ *  `codeSummedM` is the real wiring's error in the homing card above (code sums the heading). */
+export function homeVectorCard(
+  parent: HTMLElement,
+  hv: HomeVector,
+  scope: Scope,
+  codeSummedM?: number,
+): void {
   const seeds = `${hv.seeds[0]}–${hv.seeds[hv.seeds.length - 1]}`;
   const view = card(
     "When the network computes the home vector itself",
     "Above, the network only reports its heading and code adds up the steps. Here a network of " +
       "the same size is trained to report, at every step, where the nest is — so its wiring has to " +
-      "do the adding up, as the fan-shaped body is thought to do in insects. Tested on the same " +
-      `Warsaw flights, pre-registered on fresh seeds ${seeds} (${hv.seeds.length} networks of ` +
-      "each kind, 100 flights each).",
+      "do the adding up, as the fan-shaped body (a part of the insect central complex) is thought " +
+      "to do. Tested on the same Warsaw flights and pre-registered — the test rule was fixed before " +
+      `the run — on fresh seeds ${seeds} (${hv.seeds.length} networks of each kind, 100 flights ` +
+      "each). Controls: a random wiring of the same size, a degree-shuffled wiring (rewired, each " +
+      "neuron keeps its number of connections) and a wiring shuffled within cell types.",
   );
+  view.legend.hidden = true;
   const lede = el("p", { className: "lede", text: verdict(hv) });
-  view.root.querySelector("h2")?.after(lede);
+  view.root.querySelector("p.note")?.after(lede);
   const points: Point[] = CONTROLS.map((variant, index) => ({
     variant,
     index,
@@ -181,13 +194,13 @@ export function homeVectorCard(parent: HTMLElement, hv: HomeVector, scope: Scope
           numeric: true,
         },
         {
-          label: "95% CI",
+          label: "95% CI (m)",
           value: (v) =>
             `${hv.mean_error_m[v].low.toFixed(1)}–${hv.mean_error_m[v].high.toFixed(1)}`,
           numeric: true,
         },
         {
-          label: "Real minus this (m)",
+          label: "Real minus control (m)",
           value: (v) => {
             if (v === "FlyConnectome") return "—";
             const d = hv.fly_minus_error_m[v];
@@ -200,6 +213,9 @@ export function homeVectorCard(parent: HTMLElement, hv: HomeVector, scope: Scope
         `(seeds ${seeds}, 95% confidence intervals over seeds)`,
     ),
   );
+  const above = codeSummedM === undefined ? "" : ` (${metres(codeSummedM)})`;
+  const link = el("a", { text: "Details and pre-registration (GitHub)" });
+  link.href = "https://github.com/kat1478/NeuroFlyNav/blob/develop/docs/spike_homevector.md";
   view.root.append(
     el(
       "p",
@@ -210,22 +226,19 @@ export function homeVectorCard(parent: HTMLElement, hv: HomeVector, scope: Scope
         `${metres(hv.stay_error_m.mean)}. A rewiring that keeps which cell types connect does ` +
         `almost as well as the real wiring (${signed(hv.fly_minus_error_m.TypeShuffledFly.mean)} m, ` +
         "interval includes zero): as on the heading task, cell-type structure carries most of the " +
-        "advantage. Caveats: the network's own vector is still less accurate than code adding up " +
-        "its heading (above), because these flights run up to three times longer than the training " +
-        `flights (on training-length flights it misses by ${metres(hv.mean_synthetic_error_m.FlyConnectome.mean)}); ` +
-        "and a pilot criterion of this test was not met. Exploratory.",
+        "advantage.",
     ),
     el(
       "p",
       { className: "note" },
-      el("a", {
-        text: "Details and pre-registration",
-      }),
+      "Caveats: the network's own vector is still less accurate than code adding up its heading " +
+        `estimates${above}. These flights run up to three times longer than the training flights; ` +
+        `on training-length flights it misses by ${metres(hv.mean_synthetic_error_m.FlyConnectome.mean)}. ` +
+        "In a pilot it did not beat a simple code-summed reference (about 32 m), which we recorded " +
+        "before the main run. One model family, constant speed, flights ignore streets. Exploratory.",
     ),
+    el("p", { className: "note" }, link),
   );
-  const link = view.root.querySelector<HTMLAnchorElement>("p.note:last-child a");
-  if (link)
-    link.href = "https://github.com/kat1478/NeuroFlyNav/blob/develop/docs/spike_homevector.md";
   parent.append(view.root);
 
   const draw = (): void => {

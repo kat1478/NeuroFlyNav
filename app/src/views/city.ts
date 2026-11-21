@@ -619,8 +619,9 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
       el("p", {
         className: "lede",
         text:
+          framing +
           `Pre-registered test on fresh seeds ${s.seeds[0]}–${s.seeds[s.seeds.length - 1]} ` +
-          `(${s.seeds.length} trained networks of each kind, 100 flights each). ${framing}${verdict}`,
+          `(${s.seeds.length} trained networks of each kind, 100 flights each). ${verdict}`,
       }),
       el(
         "p",
@@ -1087,7 +1088,9 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   };
   const stopScheme = onScheme(restyle);
   drawResult();
-  if (city.homevector) homeVectorCard(root, city.homevector, scope);
+  if (city.homevector) {
+    homeVectorCard(root, city.homevector, scope, city.summary?.mean_error_m.FlyConnectome.mean);
+  }
   scope.onLeave(() => {
     runId++;
     cancelAnimationFrame(frame);
