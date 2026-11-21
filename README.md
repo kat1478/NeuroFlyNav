@@ -153,6 +153,13 @@ the nest than a random wiring of the same size, but the interval includes zero (
 — **no homing advantage**. Training matters far more (with frozen recurrent weights the fly lands 166 m away).
 See [docs/spike_homing.md](docs/spike_homing.md).
 
+What if the network has to **compute the home vector itself**, as insects are thought to do in the
+fan-shaped body? Trained to report where the nest is at every step, the real wiring lands
+**14.7 m closer** to the nest than a same-size random wiring (47 vs 62 m; −14.7 m [−18.8, −10.7],
+pre-registered, 100 cloud jobs). Most of that edge survives a within-cell-type shuffle (−2.0 m,
+interval includes zero), so cell-type structure carries it again. See
+[docs/spike_homevector.md](docs/spike_homevector.md).
+
 ## Cloud runs
 
 The whole-CX sweep (5 variants × 20 seeds) would take ~30 h on a laptop. It runs on AWS as a
@@ -203,6 +210,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
 | [docs/spike_homing.md](docs/spike_homing.md) | Foraging and homing by path integration over central Warsaw, pre-registered result |
+| [docs/spike_homevector.md](docs/spike_homevector.md) | The network computes the home vector itself, pre-registered result |
 | [docs/report.md](docs/report.md) | Short technical report: question, methods, all results, engineering, limitations |
 | [docs/preregistration.md](docs/preregistration.md) | Decision rules of every pre-registered comparison, with the commit each run used |
 | [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |

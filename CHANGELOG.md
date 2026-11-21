@@ -6,6 +6,10 @@ All notable changes to this project are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- Home-vector task (`tasks/homevector.py`, `run_homevector`, `aggregate_homevector`): the network
+  reports where the nest is at every step (regression readout). Pre-registered result on seeds 80–99
+  (100 AWS Batch jobs): the real wiring computes a better home vector than a same-size random wiring,
+  −14.7 m [−18.8, −10.7]; vs within-cell-type shuffle −2.0 m [−5.0, +0.9] (`docs/spike_homevector.md`).
 - `.github/workflows/image.yml`: GitHub Actions builds the job image and publishes it to
   `ghcr.io/kat1478/neuroflynav:<sha12>` with the built-in token (no AWS access, no stored keys).
 - Terraform `image_repository` variable: the job definition can use the GHCR image
