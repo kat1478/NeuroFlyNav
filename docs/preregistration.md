@@ -27,6 +27,7 @@ errors over 20 seeds (a "CI > 0" reading means the whole interval lies above zer
 | 6 | Trained weights, compass core, little data | 20–39 | **one test:** Fly − RandomMask pooled over n = 16/32/64, CI > 0 | opposite: −0.024 | `3595624` | [spike_trained.md](spike_trained.md) |
 | 7 | Trained weights, whole CX (AWS) | 40–59 | **one test:** Fly − RandomMask CI > 0 | **yes: +0.028 [+0.021, +0.036]** | `1405eb5` | [spike_trained.md](spike_trained.md) |
 | 8 | Homing over central Warsaw (AWS) | 60–79 | **one test:** Fly − RandomMask homing error CI < 0 | **no: −1.2 m [−4.1, +1.7]** | `81967d0` | [spike_homing.md](spike_homing.md) |
+| 9 | Network computes the home vector (AWS) | 80–99 | **one test:** Fly − RandomMask homing error CI < 0 | **yes: −14.7 m [−18.8, −10.7]**; vs type-shuffled −2.0 [−5.0, +0.9] | `62f1b95` | [spike_homevector.md](spike_homevector.md) |
 
 ## 1. Hidden-cue task: replication and cell-type shuffle (2026-10-21)
 
@@ -114,3 +115,17 @@ errors over 20 seeds (a "CI > 0" reading means the whole interval lies above zer
   → the real wiring flies home closer. If the interval includes 0 or lies above it, report "no homing
   advantage". Secondary: other controls, heading accuracy on flights, quantisation-only and
   no-integration references.
+
+## 9. The network computes the home vector (2026-11-19)
+
+- Whole CX; the masked RNN reports the home vector (nest relative to the fly, map frame, /100 m) at
+  every step, regression readout, mean squared error, 1000 Adam steps, trained on 256 synthetic
+  flights of 100 steps; tested on the Warsaw flights of 8 (100 per seed). Seeds 80–99.
+- Metric per (variant, seed): mean homing error (m) = distance between reported and true home vector
+  at the last outbound step.
+- **Primary (one test):** Fly − RandomMask, 95% CI entirely below 0 → the real wiring computes a better
+  home vector. Secondary: − TypeShuffledFly, − ShuffledFly, − FrozenFly; error along the flight and on
+  synthetic flights; references.
+- Recorded before the run: the plan's pilot criterion (Fly clearly below the code-summed last-landmark
+  reference, ~32 m) was not met on the Warsaw endpoint (pilot 43 m); the run went ahead with this caveat.
+
