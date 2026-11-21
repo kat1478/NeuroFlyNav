@@ -11,6 +11,7 @@ from neuroflynav.reporting.app_data import (
     APP_DATA_DIR,
     build,
     family_neurons,
+    homevector_block,
     replay,
 )
 from neuroflynav.reporting.figures import DATA_DIR
@@ -131,3 +132,38 @@ def test_city_converts_flights_and_checks_they_match() -> None:
     }
     with pytest.raises(ValueError, match="flights differ"):
         city(job, other, treats)
+
+
+def test_homevector_block_keeps_only_displayed_fields() -> None:
+    estimate = {"mean": 1.0, "low": 0.5, "high": 1.5}
+    summary: dict[str, object] = {
+        "seeds": list(range(80, 100)),
+        "mean_error_m": {"FlyConnectome": estimate},
+        "mean_along_error_m": {"FlyConnectome": estimate},
+        "mean_synthetic_error_m": {"FlyConnectome": estimate},
+        "fly_minus_error_m": {"RandomMask": estimate},
+        "stay_error_m": estimate,
+        "quantised_error_m": estimate,
+        "no_integration_error_m": estimate,
+        "per_seed_error_m": [{"FlyConnectome": 1.0}],
+        "training": {"steps": 1000},
+    }
+    block = homevector_block(summary)
+    assert "per_seed_error_m" not in block and "training" not in block
+    assert block["fly_minus_error_m"] == {"RandomMask": estimate}
+    assert "80-99" in str(block["_source"])
+    with pytest.raises(ValueError, match="lacks"):
+        homevector_block({"seeds": [80]})
+
+
+def test_committed_city_homevector_matches_its_fields() -> None:
+    city = json.loads((APP_DATA_DIR / "city.json").read_text())
+    block = city.get("homevector")
+    if block is None:
+        pytest.skip("city.json has no home-vector block")
+    assert block["seeds"] == list(range(80, 100))
+    fly = block["mean_error_m"]["FlyConnectome"]["mean"]
+    random = block["mean_error_m"]["RandomMask"]["mean"]
+    assert block["fly_minus_error_m"]["RandomMask"]["mean"] == pytest.approx(
+        fly - random, abs=1e-9
+    )

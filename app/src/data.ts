@@ -123,6 +123,23 @@ export interface City {
     no_integration_error_m: Estimate;
   } | null;
   flights: CityFlight[];
+  homevector?: HomeVector;
+}
+
+type HomeVectorVariant =
+  "FlyConnectome" | "TypeShuffledFly" | "RandomMask" | "ShuffledFly" | "FrozenFly";
+
+/** Pre-registered home-vector result (the network reports the home vector itself). */
+export interface HomeVector {
+  _source: string;
+  seeds: number[];
+  mean_error_m: Record<HomeVectorVariant, Estimate>;
+  mean_along_error_m: Record<HomeVectorVariant, Estimate>;
+  mean_synthetic_error_m: Record<HomeVectorVariant, Estimate>;
+  fly_minus_error_m: Record<Exclude<HomeVectorVariant, "FlyConnectome">, Estimate>;
+  stay_error_m: Estimate;
+  quantised_error_m: Estimate;
+  no_integration_error_m: Estimate;
 }
 
 export interface TreatFeature {
