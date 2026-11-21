@@ -221,6 +221,30 @@ def city(
     }
 
 
+_HOMEVECTOR_KEYS = (
+    "seeds",
+    "mean_error_m",
+    "mean_along_error_m",
+    "mean_synthetic_error_m",
+    "fly_minus_error_m",
+    "stay_error_m",
+    "quantised_error_m",
+    "no_integration_error_m",
+)
+
+
+def homevector_block(summary: dict[str, object]) -> dict[str, object]:
+    """The parts of an ``aggregate_homevector`` summary shown in the City view."""
+    missing = [key for key in _HOMEVECTOR_KEYS if key not in summary]
+    if missing:
+        raise ValueError(f"home-vector summary lacks {missing}")
+    return {
+        "_source": "run_homevector, pre-registered (whole CX, seeds "
+        f"{summary['seeds'][0]}-{summary['seeds'][-1]}, 100 Warsaw flights per seed)",  # type: ignore[index]
+        **{key: summary[key] for key in _HOMEVECTOR_KEYS},
+    }
+
+
 def build(
     summary: dict[str, object],
     matrix_path: Path,
@@ -277,6 +301,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="rebuild city.json from results/homing pilot traces (and summary if present)",
     )
+    parser.add_argument(
+        "--homevector",
+        action="store_true",
+        help="add the pre-registered home-vector summary to city.json",
+    )
     arguments = parser.parse_args(argv)
 
     previous = {
@@ -320,6 +349,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             json.loads((arguments.out / "treats.geojson").read_text()),
             _read(summary_path),
         )
+
+    if arguments.homevector:
+        city_data = refreshed.get("city", previous.get("city"))
+        if not isinstance(city_data, dict):
+            parser.error("--homevector needs city.json (run with --city first)")
+        path = arguments.results_dir / "homevector" / "prereg_seeds80-99.json"
+        refreshed["city"] = {
+            **city_data,
+            "homevector": homevector_block(json.loads(path.read_text())),
+        }
 
     summary = json.loads((DATA_DIR / "summary.json").read_text())
     files = build(summary, DATA_DIR / "cx_family_matrix.csv", previous, refreshed)

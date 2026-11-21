@@ -28,6 +28,7 @@ import { DOWNLOAD_MB_COMPRESSED, getNetworks, runSectors, type Networks } from "
 import type { Scope } from "../lifecycle";
 import { onScheme, palette, type Palette } from "../theme";
 import { el, pct } from "../ui";
+import { homeVectorCard } from "./homevector";
 
 type Net = "FlyConnectome" | "RandomMask";
 const NETS: { key: Net; series: "FlyConnectome" | "RandomRecurrent"; short: string }[] = [
@@ -577,6 +578,8 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
     const s = city.summary;
     const pilot = city.pilot;
     const head = el("h2", { text: "Does the real wiring fly home closer?" });
+    const framing =
+      "Here the network reports only its heading; code adds up the steps into the home vector. ";
     if (!s) {
       resultCard.replaceChildren(
         head,
@@ -617,7 +620,7 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
         className: "lede",
         text:
           `Pre-registered test on fresh seeds ${s.seeds[0]}–${s.seeds[s.seeds.length - 1]} ` +
-          `(${s.seeds.length} trained networks of each kind, 100 flights each). ${verdict}`,
+          `(${s.seeds.length} trained networks of each kind, 100 flights each). ${framing}${verdict}`,
       }),
       el(
         "p",
@@ -1084,6 +1087,7 @@ export async function renderCity(root: HTMLElement, scope: Scope): Promise<void>
   };
   const stopScheme = onScheme(restyle);
   drawResult();
+  if (city.homevector) homeVectorCard(root, city.homevector, scope);
   scope.onLeave(() => {
     runId++;
     cancelAnimationFrame(frame);
