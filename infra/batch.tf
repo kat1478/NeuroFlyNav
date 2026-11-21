@@ -71,7 +71,7 @@ resource "aws_batch_job_definition" "trained" {
   }
 
   container_properties = jsonencode({
-    image            = "${aws_ecr_repository.jobs.repository_url}:${var.image_tag}"
+    image            = "${coalesce(var.image_repository, aws_ecr_repository.jobs.repository_url)}:${var.image_tag}"
     executionRoleArn = aws_iam_role.execution.arn
     jobRoleArn       = aws_iam_role.job.arn
     resourceRequirements = [

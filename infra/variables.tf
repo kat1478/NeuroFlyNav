@@ -50,3 +50,9 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "image_repository" {
+  description = "Image repository for the job definition; empty = the project ECR repository. Images built by GitHub Actions: ghcr.io/kat1478/neuroflynav (public)."
+  type        = string
+  default     = ""
+}

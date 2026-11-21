@@ -20,7 +20,7 @@ map: the two trained 2,966-neuron networks (real and random wiring) run live in 
 
 <img alt="Animated demo of the City view: a simulated fly searches from its nest in a Warsaw park to a bakery, then two networks fly home — the real fly wiring (thin solid blue line) and a random wiring (wide dashed green line) — and the map zooms in to show how far from the nest each one lands." src="docs/figures/demo-city.gif" width="720">
 
-> **Status: v0.8.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
+> **Status: v0.9.0, exploratory.** The pipeline runs end to end on the real CX wiring (2,966
 > neurons, 467,579 connections), locally or as containerised sweeps on AWS Batch. Model choices
 > (dynamics, inputs, readout) are still exploratory: each comparison's decision rule was fixed
 > before it ran (pre-registered), but no overall protocol is frozen yet. Read the numbers below
@@ -33,8 +33,8 @@ map: the two trained 2,966-neuron networks (real and random wiring) run live in 
 | Research design | Hypotheses with fair controls, decision rules fixed before each run ([published here](docs/preregistration.md)), fresh seeds, paired 95% CIs, negative results reported as such | [docs/](docs/), results below |
 | Machine learning | Reservoir computing; recurrent networks whose weights live only on connectome edges, trained with backpropagation through time (PyTorch) | [`training/`](src/neuroflynav/training/), [`agent/`](src/neuroflynav/agent/) |
 | Data engineering | Public connectome export → typed graph with checksums; OpenStreetMap extract → vector tiles of Warsaw | [`graph/hemibrain.py`](src/neuroflynav/graph/hemibrain.py), [`geo/`](geo/) |
-| Software engineering | Typed Python (mypy strict), 83 + 19 automated tests, ruff, CI on every pull request, semantic-versioned releases | [`tests/`](tests/), [CI](.github/workflows/quality.yml), [CHANGELOG](CHANGELOG.md) |
-| Cloud / MLOps | Docker image in ECR, 100-job sweeps on AWS Batch (Fargate Spot), S3, least-privilege IAM, budget alerts, all in Terraform | [`infra/`](infra/README.md), [docs/cloud.md](docs/cloud.md) |
+| Software engineering | Typed Python (mypy strict), 91 + 19 automated tests, ruff, CI on every pull request, semantic-versioned releases | [`tests/`](tests/), [CI](.github/workflows/quality.yml), [CHANGELOG](CHANGELOG.md) |
+| Cloud / MLOps | Docker image built by GitHub Actions (GHCR, no stored keys) or pushed to ECR, 100-job sweeps on AWS Batch (Fargate Spot), S3, least-privilege IAM, budget alerts, all in Terraform | [`infra/`](infra/README.md), [docs/cloud.md](docs/cloud.md) |
 | Model deployment | Trained PyTorch networks exported to ONNX (sparse recurrence with Gather/ScatterElements, int32 indices, 5.8 MB each), golden parity tests (100 % agreement), ONNX Runtime Web (WebAssembly) lazy-loaded in the browser; models shipped as a checksummed release asset | [`export_onnx.py`](src/neuroflynav/reporting/export_onnx.py), [`app/src/fly/`](app/src/fly/) |
 | Frontend / data visualisation | Vite + TypeScript, Observable Plot, MapLibre with self-hosted PMTiles, light/dark, WCAG AA contrast and ARIA, fixes from independent UI/UX audits; GitHub Pages + CloudFront | [`app/`](app/), [docs/app.md](docs/app.md) |
 
@@ -153,6 +153,13 @@ the nest than a random wiring of the same size, but the interval includes zero (
 — **no homing advantage**. Training matters far more (with frozen recurrent weights the fly lands 166 m away).
 See [docs/spike_homing.md](docs/spike_homing.md).
 
+What if the network has to **compute the home vector itself**, as insects are thought to do in the
+fan-shaped body? Trained to report where the nest is at every step, the real wiring lands
+**14.7 m closer** to the nest than a same-size random wiring (47 vs 62 m; −14.7 m [−18.8, −10.7],
+pre-registered, 100 cloud jobs). Most of that edge survives a within-cell-type shuffle (−2.0 m,
+interval includes zero), so cell-type structure carries it again. See
+[docs/spike_homevector.md](docs/spike_homevector.md).
+
 ## Cloud runs
 
 The whole-CX sweep (5 variants × 20 seeds) would take ~30 h on a laptop. It runs on AWS as a
@@ -203,6 +210,7 @@ importable without installation; one hemibrain seed takes about 30 s on a laptop
 | [docs/spike_heading.md](docs/spike_heading.md) | Heading integration task: landmarks + self-motion, pre-registered result |
 | [docs/spike_trained.md](docs/spike_trained.md) | Recurrent weights trained on the CX mask (compass core and whole CX), pre-registered results |
 | [docs/spike_homing.md](docs/spike_homing.md) | Foraging and homing by path integration over central Warsaw, pre-registered result |
+| [docs/spike_homevector.md](docs/spike_homevector.md) | The network computes the home vector itself, pre-registered result |
 | [docs/report.md](docs/report.md) | Short technical report: question, methods, all results, engineering, limitations |
 | [docs/preregistration.md](docs/preregistration.md) | Decision rules of every pre-registered comparison, with the commit each run used |
 | [docs/cloud.md](docs/cloud.md) | Container and AWS Batch sweeps: build, push, submit, collect |

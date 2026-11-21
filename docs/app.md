@@ -9,12 +9,12 @@ A static web app in [`app/`](../app/) shows the results to visitors:
 | Results | Headline result, all pre-registered comparisons, per-seed differences, learning curve |
 | Wiring | Synapses between the 19 cell-type families of the CX, family cards, glossary of abbreviations |
 | Replay | Two trained whole-CX networks (real vs random wiring) tracking heading, step by step |
-| City | A fly forages over central Warsaw (OpenStreetMap) and flies home by path integration; real vs random wiring ([spike_homing.md](spike_homing.md)). **Drop a fly anywhere:** the visitor places a nest and lets the fly search or picks a treat; the trained networks run live in the browser |
+| City | A fly forages over central Warsaw (OpenStreetMap) and flies home by path integration; real vs random wiring ([spike_homing.md](spike_homing.md)). **Drop a fly anywhere:** the visitor places a nest and lets the fly search or picks a treat; the trained networks run live in the browser. A second card shows the pre-registered home-vector result ([spike_homevector.md](spike_homevector.md)) |
 
 There is no server: the app reads four small JSON files (plus `treats.geojson`) in
 `app/public/data/`, written by `neuroflynav.reporting.app_data` from committed result
 summaries (and, with `--refresh`, from local results and the hemibrain export; with `--city`,
-from the homing pilot traces and summary). Only family-level aggregates and synthetic-task traces
+from the homing pilot traces and summary; with `--homevector`, the home-vector summary is added to `city.json`). Only family-level aggregates and synthetic-task traces
 are published; no neuron-level connectome data. The City view also loads
 `app/public/map/warsaw.pmtiles` (OpenStreetMap, ODbL; built by `geo/build_map.py`, see
 `app/public/map/manifest.json`) and is loaded lazily, so MapLibre does not slow the other views.
@@ -83,4 +83,6 @@ for colour-vision deficiency in light and dark mode; every chart has a table vie
   (`infra/site.tf`; no public bucket, HTTPS only, AWS-managed security headers). After
   `terraform apply`, upload with `conda run -n neuroflynav-app make deploy-aws` (needs
   `aws login --profile neuroflynav` and `AWS_PROFILE=neuroflynav`). The mirror lives on
-  the project's AWS Free plan and is not guaranteed to outlast it.
+  the project's AWS Free plan and is not guaranteed to outlast it. The `.wasm` runtime and
+  the `.onnx` models are uploaded pre-gzipped (`Content-Encoding: gzip`), because CloudFront
+  compresses neither files over 10 MB nor `application/octet-stream`.

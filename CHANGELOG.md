@@ -5,6 +5,34 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-11-21
+
+The network computes the home vector itself: pre-registered, the real central-complex wiring
+computes a better home vector than a random wiring of the same size. The job image is now built by
+GitHub Actions.
+
+### Added
+- Home-vector task (`tasks/homevector.py`, `run_homevector`, `aggregate_homevector`): the network
+  reports where the nest is at every step (regression readout). Pre-registered result on seeds 80–99
+  (100 AWS Batch jobs): the real wiring computes a better home vector than a same-size random wiring,
+  −14.7 m [−18.8, −10.7]; vs within-cell-type shuffle −2.0 m [−5.0, +0.9] (`docs/spike_homevector.md`).
+- `.github/workflows/image.yml`: GitHub Actions builds the job image and publishes it to
+  `ghcr.io/kat1478/neuroflynav:<sha12>` with the built-in token (no AWS access, no stored keys).
+- Terraform `image_repository` variable: the job definition can use the GHCR image
+  (default unchanged: the project ECR repository).
+
+### Changed
+- App, City view: new card with the pre-registered home-vector result (verdict, chart of real minus
+  each control with 95% CI, table, caveats); `app_data --homevector` exports it into `city.json`.
+- `docs/report.md` updated for v0.9.0: home-vector result (task 4, row 9, reading, limitations).
+- `docs/report.md` updated for v0.8.0: the trained networks in the browser (ONNX export, parity,
+  ONNX Runtime Web), test counts, next steps.
+
+### Fixed
+- `make deploy-aws` uploads the ONNX Runtime `.wasm` and the `.onnx` models pre-gzipped
+  (CloudFront does not compress files over 10 MB or `application/octet-stream`): the first fly on
+  the AWS mirror downloads ~9.8 MB instead of ~26 MB.
+
 ## [0.8.0] — 2026-11-18
 
 Drop a fly anywhere: the trained whole-CX networks run live in the browser. No new experiments,
@@ -198,7 +226,8 @@ Results are exploratory; no experiment is frozen.
 - Provenance reads a tool's version from its executable when Conda ships no Python
   metadata (conda-forge ruff ≥ 0.17).
 
-[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.8.0...develop
+[Unreleased]: https://github.com/kat1478/NeuroFlyNav/compare/v0.9.0...develop
+[0.9.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.9.0
 [0.8.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.8.0
 [0.7.1]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.1
 [0.7.0]: https://github.com/kat1478/NeuroFlyNav/releases/tag/v0.7.0
