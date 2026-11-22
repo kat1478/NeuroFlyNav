@@ -47,6 +47,7 @@ from neuroflynav.tasks.homevector import (
     along_error,
     dataset,
     endpoint_error,
+    error_by_length,
     scored_steps,
     training_config,
 )
@@ -154,6 +155,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "mean_steps": round(statistics.fmean(f.steps for f in flights), 2),
         "error_m": summary(errors),
         "along_error_m": summary(along),
+        "error_by_length_m": error_by_length([f.steps for f in flights], errors),
         "synthetic_error_m": summary(synthetic_end),
         "synthetic_along_error_m": summary(synthetic_along),
         "stay_error_m": summary(stay),

@@ -86,3 +86,34 @@ def along_error(flight: Flight, predicted: FloatArray, cue_steps: int) -> float:
     estimate = np.asarray(predicted[: flight.steps], dtype=float) * HOME_SCALE_M
     gaps = np.linalg.norm(estimate - truth, axis=1)[cue_steps:]
     return float(gaps.mean()) if len(gaps) else float("nan")
+
+
+LENGTH_BINS = (50, 100, 200, 300)
+
+
+def error_by_length(
+    steps: Sequence[int], errors: Sequence[float], bins: Sequence[int] = LENGTH_BINS
+) -> list[dict[str, float | int]]:
+    """Mean endpoint error per flight-length bin (exploratory diagnostic).
+
+    Bin ``i`` holds flights with ``bins[i-1] < steps <= bins[i]`` (the first starts at 1).
+    Each entry: ``{"max_steps", "flights", "mean_m"}``; ``mean_m`` is NaN for an empty bin.
+    """
+    if len(steps) != len(errors):
+        raise ValueError("steps and errors must have the same length")
+    lengths, values = np.asarray(steps), np.asarray(errors, dtype=float)
+    out: list[dict[str, float | int]] = []
+    low = 0
+    for high in bins:
+        chosen = values[(lengths > low) & (lengths <= high)]
+        out.append(
+            {
+                "max_steps": int(high),
+                "flights": len(chosen),
+                "mean_m": round(float(chosen.mean()), 3)
+                if len(chosen)
+                else float("nan"),
+            }
+        )
+        low = high
+    return out

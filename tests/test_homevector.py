@@ -13,6 +13,7 @@ from neuroflynav.tasks.homevector import (
     along_error,
     dataset,
     endpoint_error,
+    error_by_length,
     flight_targets,
     positions,
     scored_steps,
@@ -168,3 +169,14 @@ def test_job_writes_a_result(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     assert result["variant"] == "RandomMask" and result["seed"] == 100
     assert result["flights"] == 3 and len(result["errors_m"]) == 3
     assert result["error_m"]["mean"] >= 0
+
+
+def test_error_by_length_bins_flights() -> None:
+    bins = error_by_length([10, 50, 51, 120, 300], [1.0, 3.0, 5.0, 7.0, 9.0])
+    assert [b["max_steps"] for b in bins] == [50, 100, 200, 300]
+    assert [b["flights"] for b in bins] == [2, 1, 1, 1]
+    assert [b["mean_m"] for b in bins] == [2.0, 5.0, 7.0, 9.0]
+    empty = error_by_length([10], [4.0])
+    assert empty[0]["mean_m"] == 4.0 and math.isnan(float(empty[1]["mean_m"]))
+    with pytest.raises(ValueError):
+        error_by_length([1, 2], [1.0])
